@@ -1,0 +1,6 @@
+node_modules/
+dist/
+.venv/
+pipeline/raw/
+pipeline/certs/*.der
+.DS_Store

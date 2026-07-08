@@ -1,0 +1,75 @@
+:root {
+  --bg: #efece1;
+  --bg-card: #efece1;
+  --ink: #17140f;
+  --line: rgba(23, 20, 15, 0.85);
+  --line-soft: rgba(23, 20, 15, 0.18);
+
+  --hot: #ff4200;
+  --hot-soft: #ffe0d1;
+  --normal: #f4906a;
+  --normal-soft: #fbe4d8;
+  --falling: #9bb7c4;
+  --falling-soft: #e4edf0;
+  --seasonal: #9a7bd6;
+  --seasonal-soft: #ebe3f8;
+
+  --font-display: 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', system-ui, sans-serif;
+  --font-body: 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', system-ui, sans-serif;
+
+  --radius-card: 2px;
+  --gap: 1px;
+
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+}
+
+body {
+  min-height: 100vh;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.type-hot {
+  --type-color: var(--hot);
+  --type-soft: var(--hot-soft);
+}
+.type-normal {
+  --type-color: var(--normal);
+  --type-soft: var(--normal-soft);
+}
+.type-falling {
+  --type-color: var(--falling);
+  --type-soft: var(--falling-soft);
+}
+.type-seasonal {
+  --type-color: var(--seasonal);
+  --type-soft: var(--seasonal-soft);
+}
+
+::selection {
+  background: var(--ink);
+  color: var(--bg);
+}
