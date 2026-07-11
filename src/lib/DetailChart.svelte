@@ -141,9 +141,12 @@
       role="img"
     >
       {#each yTicks as t (t)}
-        <line x1={margin.left} x2={width - margin.right} y1={y(t)} y2={y(t)} class="gridline" class:baseline={t === 100} />
+        <line x1={margin.left} x2={width - margin.right} y1={y(t)} y2={y(t)} class="gridline" />
         <text x={margin.left - 12} y={y(t)} class="ytick" text-anchor="end" dominant-baseline="middle">{t}</text>
       {/each}
+
+      <line x1={margin.left} x2={width - margin.right} y1={y(100)} y2={y(100)} class="gridline baseline" />
+      <text x={width - margin.right + 8} y={y(100)} class="ytick baseline-label" dominant-baseline="middle">100</text>
 
       <line x1={margin.left} x2={width - margin.right} y1={height - margin.bottom} y2={height - margin.bottom} class="axis" />
 
@@ -178,9 +181,12 @@
   {:else}
     <svg viewBox="0 0 {width} {height}" class="chart" preserveAspectRatio="xMidYMid meet" role="img">
       {#each yMonthTicks as t (t)}
-        <line x1={margin.left} x2={width - margin.right} y1={yMonth(t)} y2={yMonth(t)} class="gridline" class:baseline={t === 100} />
+        <line x1={margin.left} x2={width - margin.right} y1={yMonth(t)} y2={yMonth(t)} class="gridline" />
         <text x={margin.left - 12} y={yMonth(t)} class="ytick" text-anchor="end" dominant-baseline="middle">{t}</text>
       {/each}
+
+      <line x1={margin.left} x2={width - margin.right} y1={yMonth(100)} y2={yMonth(100)} class="gridline baseline" />
+      <text x={width - margin.right + 8} y={yMonth(100)} class="ytick baseline-label" dominant-baseline="middle">100</text>
 
       <line x1={margin.left} x2={width - margin.right} y1={height - margin.bottom} y2={height - margin.bottom} class="axis" />
 
@@ -256,6 +262,9 @@
     stroke: var(--ink);
     stroke-width: 1.25;
     stroke-dasharray: 4 3;
+  }
+  .baseline-label {
+    font-weight: 700;
   }
   .axis {
     stroke: var(--ink);
