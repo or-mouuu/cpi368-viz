@@ -75,14 +75,22 @@
   )
 
   const yMonth = $derived.by(() => {
+    // bars grow from the 100 baseline; anchor the floor at exactly 100 when
+    // nothing dips below it, so bars sit flush on the axis instead of
+    // floating above a padded-down floor like 97/98
     const vals = months.map((m) => m.avg)
-    const min = Math.min(...vals, 100)
-    const max = Math.max(...vals, 100)
-    const pad = (max - min) * 0.15 || 5
+    const dataMin = Math.min(...vals)
+    const dataMax = Math.max(...vals, 100)
+    const span = Math.max(dataMax - Math.min(dataMin, 100), 1)
+    const topPad = span * 0.15
+    const domainMax = dataMax + topPad
+    const domainMin = dataMin >= 100 ? 100 : dataMin - span * 0.08
     return scaleLinear()
-      .domain([min - pad, max + pad])
+      .domain([domainMin, domainMax])
       .range([height - margin.bottom, margin.top])
   })
+
+  const monthHasDip = $derived(Math.min(...months.map((m) => m.avg)) < 99.9)
 
   const yMonthTicks = $derived.by(() => {
     const [d0, d1] = yMonth.domain()
@@ -185,8 +193,10 @@
         <text x={margin.left - 12} y={yMonth(t)} class="ytick" text-anchor="end" dominant-baseline="middle">{t}</text>
       {/each}
 
-      <line x1={margin.left} x2={width - margin.right} y1={yMonth(100)} y2={yMonth(100)} class="gridline baseline" />
-      <text x={width - margin.right + 8} y={yMonth(100)} class="ytick baseline-label" dominant-baseline="middle">100</text>
+      {#if monthHasDip}
+        <line x1={margin.left} x2={width - margin.right} y1={yMonth(100)} y2={yMonth(100)} class="gridline baseline" />
+        <text x={width - margin.right + 8} y={yMonth(100)} class="ytick baseline-label" dominant-baseline="middle">100</text>
+      {/if}
 
       <line x1={margin.left} x2={width - margin.right} y1={height - margin.bottom} y2={height - margin.bottom} class="axis" />
 

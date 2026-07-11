@@ -63,8 +63,8 @@
       </div>
 
       <button class="nav next" aria-label="下一個" onclick={() => step(1)}>
-        {#if nextItem}<span class="nav-name">{nextItem.name}</span>{/if}
         <span class="chev">›</span>
+        {#if nextItem}<span class="nav-name">{nextItem.name}</span>{/if}
       </button>
     </div>
   </div>
