@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { CpiItem } from './types'
+  import { shortName, type CpiItem } from './types'
   import Sparkline from './Sparkline.svelte'
   import { detailState } from './stores.svelte'
 
@@ -12,7 +12,7 @@
 
 <button class="card type-{item.type}" class:fly={flyStyle !== ''} style={flyStyle} onclick={() => detailState.open(item.id)}>
   <span class="head">
-    <span class="name">{item.name}</span>
+    <span class="name">{shortName(item.name)}</span>
     <span class="badges">
       {#if item.event}<span class="badge" title="曾有一波大行情後回落">⚡</span>{/if}
       {#if item.volatile}<span class="badge" title="價格劇烈波動">〰️</span>{/if}

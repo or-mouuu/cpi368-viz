@@ -51,6 +51,16 @@ export const TYPE_DESC: Record<PriceType, (years: number) => string> = {
   cheaper: (y) => `比${y}年前更便宜`,
 }
 
+/** List-view display name: "其他XXX(YYY等)" items get truncated to "其他XXX"
+ * so the card grid isn't cluttered with the parenthetical examples - the
+ * full name still shows once you open the detail view. Only applies to
+ * names starting with "其他"; a name like "麥片(粉)" keeps its parenthesis. */
+export function shortName(name: string): string {
+  if (!name.startsWith('其他')) return name
+  const i = name.indexOf('(')
+  return i === -1 ? name : name.slice(0, i)
+}
+
 export const CATEGORY_ORDER = [
   '全部',
   '食物類',

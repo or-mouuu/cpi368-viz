@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { CpiItem } from './types'
-  import { TYPE_LABEL } from './types'
+  import { TYPE_LABEL, shortName } from './types'
   import { detailState, filterState, matchesFilter } from './stores.svelte'
   import { fullpage } from './fullpage.svelte'
   import { yearSpan } from './chartMath'
@@ -56,7 +56,7 @@
     <div class="chart-wrap">
       <button class="nav prev" aria-label="上一個" onclick={() => step(-1)}>
         <span class="chev">‹</span>
-        {#if prevItem}<span class="nav-name">{prevItem.name}</span>{/if}
+        {#if prevItem}<span class="nav-name">{shortName(prevItem.name)}</span>{/if}
       </button>
 
       <div class="chart-area">
@@ -65,7 +65,7 @@
 
       <button class="nav next" aria-label="下一個" onclick={() => step(1)}>
         <span class="chev">›</span>
-        {#if nextItem}<span class="nav-name">{nextItem.name}</span>{/if}
+        {#if nextItem}<span class="nav-name">{shortName(nextItem.name)}</span>{/if}
       </button>
     </div>
   </div>

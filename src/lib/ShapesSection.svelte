@@ -50,7 +50,6 @@
       </div>
     {/each}
   </div>
-  <p class="badge-note">⚡＝曾有一波大行情後回落（如雞蛋、蒜頭）　〰️＝價格劇烈波動</p>
 </div>
 
 <style>
@@ -140,12 +139,6 @@
     font-size: 0.75rem !important;
     opacity: 0.6 !important;
     min-height: 0 !important;
-  }
-
-  .badge-note {
-    margin-top: 2.2rem;
-    font-size: 0.78rem;
-    opacity: 0.65;
   }
 
   @media (max-width: 560px) {
