@@ -52,7 +52,7 @@
 {:else if !data}
   <p class="status">載入中…</p>
 {:else}
-  <TopHeader />
+  <TopHeader meta={data.meta} />
   <NavDots />
 
   <div class="viewport">

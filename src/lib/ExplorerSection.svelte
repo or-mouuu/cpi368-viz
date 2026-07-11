@@ -1,9 +1,15 @@
 <script lang="ts">
   import type { CpiItem } from './types'
   import { CATEGORY_ORDER, TYPE_LABEL, TYPE_ORDER, type PriceType } from './types'
-  import { filterState } from './stores.svelte'
+  import { filterState, type SortMode } from './stores.svelte'
   import { fullpage } from './fullpage.svelte'
   import CardGrid from './CardGrid.svelte'
+
+  const SORT_OPTIONS: { key: SortMode; label: string }[] = [
+    { key: 'default', label: '預設排序' },
+    { key: 'change_desc', label: '漲幅最高' },
+    { key: 'change_asc', label: '漲幅最低' },
+  ]
 
   let { items, index }: { items: CpiItem[]; index: number } = $props()
 
@@ -56,6 +62,23 @@
           onclick={() => filterState.setType(t as PriceType)}
         >
           {TYPE_LABEL[t]}
+        </button>
+      {/each}
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <input
+      class="search"
+      type="search"
+      placeholder="搜尋品項名稱⋯"
+      value={filterState.search}
+      oninput={(e) => filterState.setSearch(e.currentTarget.value)}
+    />
+    <div class="sort">
+      {#each SORT_OPTIONS as opt (opt.key)}
+        <button class="sort-btn" class:active={filterState.sort === opt.key} onclick={() => filterState.setSort(opt.key)}>
+          {opt.label}
         </button>
       {/each}
     </div>
@@ -166,6 +189,56 @@
     border-bottom: 2px solid var(--type-color, var(--ink));
   }
 
+  .toolbar {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.5rem 1rem;
+    border-bottom: 1px solid var(--line-soft);
+    background: var(--bg);
+  }
+
+  .search {
+    flex: 0 1 240px;
+    min-width: 0;
+    padding: 0.4rem 0.7rem;
+    font-size: 0.82rem;
+    font-family: inherit;
+    color: var(--ink);
+    background: var(--bg-card);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+  }
+
+  .search::placeholder {
+    color: rgba(23, 20, 15, 0.4);
+  }
+
+  .sort {
+    flex: 0 0 auto;
+    display: flex;
+    gap: 0.3rem;
+  }
+
+  .sort-btn {
+    border: 1px solid var(--line);
+    background: var(--bg);
+    padding: 0.35rem 0.7rem;
+    font-size: 0.76rem;
+    font-weight: 700;
+    color: var(--ink);
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+
+  .sort-btn.active {
+    background: var(--ink);
+    color: var(--bg);
+    border-color: var(--ink);
+  }
+
   .scroller {
     flex: 1 1 auto;
     overflow-y: auto;
@@ -187,6 +260,17 @@
     }
     .tabs {
       justify-content: flex-start;
+    }
+    .toolbar {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .search {
+      flex-basis: auto;
+    }
+    .sort {
+      justify-content: flex-start;
+      overflow-x: auto;
     }
   }
 </style>

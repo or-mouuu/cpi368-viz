@@ -44,12 +44,12 @@
 
   <div class="content">
     <h1>
-      <span class="line accent">368種物價</span>
+      <span class="line accent">{meta.itemCount}種物價</span>
       <!-- 査＝Dela Gothic One 的日文字形；此字型無台灣慣用的「查」，僅視覺標題使用 -->
       <span class="line">漲相大調査</span>
     </h1>
     <p>
-      368 種物價指數是由<br />
+      {meta.itemCount} 種物價指數是由<br />
       臺灣一般家庭購買消費性商品及服務之<br />
       生活中食、衣、住、行、育、樂、醫<br />
       價格水準變動情形的構成<br />

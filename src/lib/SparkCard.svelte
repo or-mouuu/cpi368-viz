@@ -3,7 +3,11 @@
   import Sparkline from './Sparkline.svelte'
   import { detailState } from './stores.svelte'
 
-  let { item, flyStyle = '' }: { item: CpiItem; flyStyle?: string } = $props()
+  let {
+    item,
+    flyStyle = '',
+    showChange = false,
+  }: { item: CpiItem; flyStyle?: string; showChange?: boolean } = $props()
 </script>
 
 <button class="card type-{item.type}" class:fly={flyStyle !== ''} style={flyStyle} onclick={() => detailState.open(item.id)}>
@@ -14,7 +18,14 @@
       {#if item.volatile}<span class="badge" title="價格劇烈波動">〰️</span>{/if}
     </span>
   </span>
-  <Sparkline data={item.series} color="var(--type-color)" width={140} height={40} />
+  <span class="foot">
+    <Sparkline data={item.series} color="var(--type-color)" width={showChange ? 104 : 140} height={40} />
+    {#if showChange}
+      <span class="change" class:pos={item.change10y >= 0} class:neg={item.change10y < 0}>
+        {item.change10y > 0 ? '+' : ''}{item.change10y.toFixed(1)}%
+      </span>
+    {/if}
+  </span>
 </button>
 
 <style>
@@ -71,5 +82,25 @@
     flex: 0 0 auto;
     font-size: 0.7rem;
     line-height: 1;
+  }
+
+  .foot {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 0.4rem;
+  }
+
+  .change {
+    flex: 0 0 auto;
+    font-family: var(--font-numeric);
+    font-size: 0.8rem;
+    font-weight: 700;
+  }
+  .change.pos {
+    color: var(--steady);
+  }
+  .change.neg {
+    color: var(--cheaper);
   }
 </style>

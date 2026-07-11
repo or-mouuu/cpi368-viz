@@ -1,11 +1,18 @@
 <script lang="ts">
   import type { CpiItem } from './types'
   import SparkCard from './SparkCard.svelte'
-  import { filterState, matchesFilter } from './stores.svelte'
+  import { filterState, matchesFilter, matchesSearch, sortItems } from './stores.svelte'
 
   let { items, flyIn = false }: { items: CpiItem[]; flyIn?: boolean } = $props()
 
-  const filtered = $derived(items.filter((it) => matchesFilter(it, filterState.type, filterState.category)))
+  const filtered = $derived(
+    sortItems(
+      items.filter(
+        (it) => matchesFilter(it, filterState.type, filterState.category) && matchesSearch(it, filterState.search),
+      ),
+      filterState.sort,
+    ),
+  )
 
   const FLY_COUNT = 64 // only the first screenful assembles with the fly-in
 
@@ -24,9 +31,9 @@
 
 <div class="grid">
   {#each filtered as item, i (item.id)}
-    <SparkCard {item} flyStyle={flyStyle(i)} />
+    <SparkCard {item} flyStyle={flyStyle(i)} showChange={filterState.sort !== 'default'} />
   {:else}
-    <p class="empty">這個篩選條件下沒有項目</p>
+    <p class="empty">找不到符合的品項</p>
   {/each}
 </div>
 

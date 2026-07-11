@@ -1,10 +1,13 @@
 <script lang="ts">
+  import type { CpiMeta } from './types'
   import { fullpage } from './fullpage.svelte'
+
+  let { meta }: { meta: CpiMeta } = $props()
 </script>
 
 {#if fullpage.active > 0}
   <header class="topbar">
-    <button class="title" onclick={() => fullpage.moveTo(0)}>368種物價漲相大調查</button>
+    <button class="title" onclick={() => fullpage.moveTo(0)}>{meta.itemCount}種物價漲相大調查</button>
   </header>
 {/if}
 
