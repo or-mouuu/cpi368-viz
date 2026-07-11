@@ -6,12 +6,14 @@
   --line-soft: rgba(23, 20, 15, 0.18);
 
   /* 上漲家族＝暖色系，持平＝大地色，下跌＝冷色 */
+  --surge: #ff8a00;
+  --surge-soft: #ffe9cc;
+  --accel: #c1121f;
+  --accel-soft: #f3d3d6;
   --steady: #ff4200;
   --steady-soft: #ffe0d1;
   --plateau: #a4441f;
   --plateau-soft: #f0ddd2;
-  --surge: #ff8a00;
-  --surge-soft: #ffe9cc;
   --wavy: #9a7bd6;
   --wavy-soft: #ebe3f8;
   --flat: #a89c7d;
@@ -58,6 +60,10 @@ button {
   cursor: pointer;
 }
 
+.type-accel {
+  --type-color: var(--accel);
+  --type-soft: var(--accel-soft);
+}
 .type-steady {
   --type-color: var(--steady);
   --type-soft: var(--steady-soft);

@@ -1,4 +1,4 @@
-export type PriceType = 'steady' | 'plateau' | 'surge' | 'wavy' | 'flat' | 'cheaper'
+export type PriceType = 'surge' | 'accel' | 'steady' | 'plateau' | 'wavy' | 'flat' | 'cheaper'
 
 export interface CpiItem {
   id: number
@@ -27,15 +27,16 @@ export interface CpiData {
   items: CpiItem[]
 }
 
-// 宏觀三分：上漲（四種漲相）→ 持平 → 下跌
-export const TYPE_ORDER: PriceType[] = ['steady', 'plateau', 'surge', 'wavy', 'flat', 'cheaper']
+// 宏觀三分：上漲（五種漲相，依「漲勢的時間分布」排序）→ 持平 → 下跌
+export const TYPE_ORDER: PriceType[] = ['surge', 'accel', 'steady', 'plateau', 'wavy', 'flat', 'cheaper']
 
-export const RISING_TYPES: PriceType[] = ['steady', 'plateau', 'surge', 'wavy']
+export const RISING_TYPES: PriceType[] = ['surge', 'accel', 'steady', 'plateau', 'wavy']
 
 export const TYPE_LABEL: Record<PriceType, string> = {
-  steady: '持續上漲',
-  plateau: '漲後不跌',
   surge: '近期急漲',
+  accel: '越漲越快',
+  steady: '穩定上漲',
+  plateau: '漲後不跌',
   wavy: '波動上漲',
   flat: '價格持平',
   cheaper: '越來越俗',
@@ -43,9 +44,10 @@ export const TYPE_LABEL: Record<PriceType, string> = {
 
 // takes the number of years the data spans (varies by item; see chartMath.yearSpan)
 export const TYPE_DESC: Record<PriceType, (years: number) => string> = {
-  steady: (y) => `${y}年來全程持續變貴，不知不覺回不去`,
-  plateau: () => '前段漲完後停在高原，價格再也沒下來',
   surge: () => '漲幅大半集中在最近三年',
+  accel: () => '前段慢慢漲，近幾年越漲越陡',
+  steady: (y) => `${y}年來以穩定的速度慢慢變貴`,
+  plateau: () => '前段漲完後停在高原，價格再也沒下來',
   wavy: () => '劇烈波動中越墊越高',
   flat: (y) => `${y}年來變動不到10%，幾乎凍住`,
   cheaper: (y) => `比${y}年前更便宜`,

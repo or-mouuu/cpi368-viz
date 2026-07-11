@@ -50,13 +50,19 @@ BASE_YEAR = 2013
 # into the resulting trend line
 MIN_MONTHS_FOR_TREND = MONTHS_PER_YEAR - 1 + 37
 
-# Classification thresholds (v3, 2026-07-11) - see docs/METHODOLOGY.md for rationale.
+# Classification thresholds (v3 2026-07-11; v3.1 steady split 2026-07-11) - see docs/METHODOLOGY.md.
 VOLATILITY_THRESHOLD = 15.0  # % deviation around trend that separates年年震盪 from多年一次行情
 RISING_THRESHOLD = 10.0      # trend change % above which an item counts as 上漲
 FALLING_THRESHOLD = -5.0     # trend change % below which an item counts as 越來越俗
 SURGE_LATE_SHARE = 0.55      # share of the rise in the last 3 years -> 近期急漲
 PLATEAU_LATE_SHARE = 0.15    # rise essentially finished before the last 3 years -> 漲後不跌
 PLATEAU_MAX_MOMENTUM = 1.5   # % trend growth over the last 12 months still counts as flat
+# v3.1: the old 持續上漲 blob (47% of items) is split by comparing the trend's
+# first-half vs second-half slope, following the shape-clustering analysis in
+# analysis/cluster_increasing.py + compare_classifications.py
+ACCEL_SLOPE_RATIO = 2.5   # second-half slope > 2.5x first-half -> 越漲越快
+ACCEL_MIN_SLOPE2 = 0.5    # ...and the late slope must be meaningful on its own
+DECEL_SLOPE_RATIO = 2.0   # first-half slope > 2x second-half -> merged into 漲後不跌
 
 
 def shape_metrics(series: list[float]) -> dict:
@@ -82,6 +88,13 @@ def shape_metrics(series: list[float]) -> dict:
     gain_at_peak = (peak / t0 - 1) * 100 if t0 else 0.0
     retrace = (peak - tn) / (peak - t0) if peak > t0 * 1.001 else 0.0
 
+    # first-half vs second-half trend slope, normalized by the trend's mean
+    # level (x1000) so items of different price levels are comparable
+    half = len(trend) // 2
+    mean_level = statistics.mean(trend)
+    slope1 = _ls_slope(trend[:half]) / mean_level * 1000 if mean_level else 0.0
+    slope2 = _ls_slope(trend[half:]) / mean_level * 1000 if mean_level else 0.0
+
     return {
         "total_change": total_change,
         "volatility": volatility,
@@ -89,12 +102,28 @@ def shape_metrics(series: list[float]) -> dict:
         "momentum": momentum,
         "gain_at_peak": gain_at_peak,
         "retrace": retrace,
+        "slope1": slope1,
+        "slope2": slope2,
     }
 
 
+def _ls_slope(values: list[float]) -> float:
+    """Least-squares slope of values against their 0..n-1 index."""
+    n = len(values)
+    if n < 2:
+        return 0.0
+    x_mean = (n - 1) / 2
+    y_mean = statistics.mean(values)
+    num = sum((i - x_mean) * (v - y_mean) for i, v in enumerate(values))
+    den = sum((i - x_mean) ** 2 for i in range(n))
+    return num / den if den else 0.0
+
+
 def classify(m: dict) -> str:
-    """v3 漲相 classification: macro 上漲/持平/下跌, with the rising tier
-    subdivided by HOW it rose rather than how much."""
+    """v3.1 漲相 classification: macro 上漲/持平/下跌, with the rising tier
+    subdivided by HOW it rose rather than how much. The former catch-all
+    持續上漲 is further split by slope shape (accelerating vs linear), with
+    clearly decelerating items folded into 漲後不跌."""
     if m["total_change"] > RISING_THRESHOLD:
         if m["volatility"] > VOLATILITY_THRESHOLD:
             return "wavy"  # 波動上漲
@@ -102,7 +131,11 @@ def classify(m: dict) -> str:
             return "surge"  # 近期急漲
         if m["late3"] <= PLATEAU_LATE_SHARE and m["momentum"] < PLATEAU_MAX_MOMENTUM:
             return "plateau"  # 漲後不跌
-        return "steady"  # 持續上漲
+        if m["slope1"] > DECEL_SLOPE_RATIO * max(m["slope2"], 0.01):
+            return "plateau"  # 早期漲完、近年明顯趨緩 -> 性格上就是漲後不跌
+        if m["slope2"] > ACCEL_SLOPE_RATIO * max(m["slope1"], 0.01) and m["slope2"] > ACCEL_MIN_SLOPE2:
+            return "accel"  # 越漲越快
+        return "steady"  # 穩定上漲
     if m["total_change"] < FALLING_THRESHOLD:
         return "cheaper"  # 越來越俗
     return "flat"  # 價格持平
@@ -211,7 +244,7 @@ def sanity_check(items: list[dict]) -> None:
     if not (300 <= len(items) <= 400):
         raise RuntimeError(f"item count out of expected range: {len(items)}")
     types_present = {it["type"] for it in items}
-    missing = {"steady", "plateau", "surge", "wavy", "flat", "cheaper"} - types_present
+    missing = {"steady", "accel", "plateau", "surge", "wavy", "flat", "cheaper"} - types_present
     if missing:
         raise RuntimeError(f"no items found for type(s): {missing}")
     for it in items:

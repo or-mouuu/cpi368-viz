@@ -9,8 +9,10 @@
   <p class="statement">
     自{meta.baseYear}年以來，多數東西都變貴了。<br />
     但比「漲多少」更值得看的，是「怎麼漲」——<br />
-    有的<span class="t-steady">持續上漲</span>、有的<span class="t-plateau">漲後不跌</span>、<br
-    />有的<span class="t-surge">近期急漲</span>、有的<span class="t-wavy">波動上漲</span>，<br />
+    有的<span class="t-surge">近期急漲</span>、有的<span class="t-accel">越漲越快</span>、<br
+    />有的<span class="t-steady">穩定上漲</span>、有的<span class="t-plateau">漲後不跌</span>、有的<span
+      class="t-wavy">波動上漲</span
+    >，<br />
     也有東西<span class="t-flat">價格持平</span>，甚至<span class="t-cheaper">越來越俗</span>。
   </p>
 
@@ -39,6 +41,9 @@
     text-align: left;
   }
 
+  .t-accel {
+    color: var(--accel);
+  }
   .t-steady {
     color: var(--steady);
   }

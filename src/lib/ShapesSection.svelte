@@ -11,23 +11,28 @@
   const risingCount = $derived(items.filter((it) => RISING_TYPES.includes(it.type)).length)
 
   const SAMPLE: Record<string, number[]> = {
+    surge: [10, 10.1, 10.2, 10.2, 10.3, 10.4, 10.6, 11, 12, 13.4, 15, 16.8],
+    accel: [10, 10.3, 10.5, 10.8, 11, 11.3, 11.7, 12.2, 12.9, 13.7, 14.7, 15.9],
     steady: [10, 10.4, 10.9, 11.2, 11.8, 12.1, 12.6, 13.2, 13.6, 14.1, 14.7, 15.2],
     plateau: [10, 10.6, 11.8, 13.2, 14.1, 14.4, 14.5, 14.4, 14.5, 14.4, 14.5, 14.4],
-    surge: [10, 10.1, 10.2, 10.2, 10.3, 10.4, 10.6, 11, 12, 13.4, 15, 16.8],
     wavy: [10, 13, 9.5, 12.5, 10.5, 14, 11, 15, 12, 16, 13, 17],
   }
 
   const EXAMPLES: Record<string, string> = {
-    steady: '例：外食、住宅租金、香菸',
-    plateau: '例：鮭魚、鮮奶、汽油、郵資',
     surge: '例：金飾、診所掛號費',
+    accel: '例：豬肉、雞蛋、中式早點',
+    steady: '例：麵包、牛肉、住宅租金',
+    plateau: '例：鮭魚、鮮奶、汽油、香菸',
     wavy: '例：蔥、芹菜、萵苣',
   }
+
+  const CN_NUM = ['', '一', '二', '三', '四', '五', '六', '七', '八', '九']
+  const shapeCount = CN_NUM[RISING_TYPES.length] ?? String(RISING_TYPES.length)
 </script>
 
 <div class="shapes">
-  <h2>「上漲」的四種漲相</h2>
-  <p class="lede">{risingCount} 個上漲的品項，依「怎麼漲」分成四種性格</p>
+  <h2>「上漲」的{shapeCount}種漲相</h2>
+  <p class="lede">{risingCount} 個上漲的品項，依「怎麼漲」分成{shapeCount}種性格</p>
   <div class="cols">
     {#each RISING_TYPES as t, ti (t)}
       <div class="col type-{t}">
@@ -77,19 +82,24 @@
 
   .cols {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 2.2rem;
-    max-width: 1120px;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 1.6rem;
+    max-width: 1240px;
     width: 100%;
   }
 
-  @media (max-width: 900px) {
+  @media (max-width: 1000px) {
     .cols {
-      grid-template-columns: repeat(2, 1fr);
+      grid-template-columns: repeat(3, 1fr);
       gap: 1rem;
     }
     .lede {
       margin-bottom: 1.2rem;
+    }
+  }
+  @media (max-width: 640px) {
+    .cols {
+      grid-template-columns: repeat(2, 1fr);
     }
   }
 
