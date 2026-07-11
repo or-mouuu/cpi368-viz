@@ -47,3 +47,19 @@ export function monthlyAverages(item: CpiItem): MonthStat[] {
 export function startYearLabel(periods: string[]): string {
   return periods[0]?.split('-')[0] ?? ''
 }
+
+/** Build 5 evenly-spaced axis ticks across a domain, picking enough decimal
+ * precision that near-frozen items (whose whole 10-year range can be <1
+ * index point) still get 5 visually distinct labels instead of "100 100
+ * 100 101 101". */
+export function niceTicks(d0: number, d1: number, count = 5): number[] {
+  const step = (d1 - d0) / (count - 1)
+  for (const decimals of [0, 1, 2]) {
+    const factor = 10 ** decimals
+    const values = Array.from({ length: count }, (_, i) => Math.round((d0 + step * i) * factor) / factor)
+    if (new Set(values).size === values.length) return values
+  }
+  // fall back to 3-decimal precision - guarantees distinctness for any
+  // non-zero step while keeping the label readable
+  return Array.from({ length: count }, (_, i) => Math.round((d0 + step * i) * 1000) / 1000)
+}

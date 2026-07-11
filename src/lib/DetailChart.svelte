@@ -2,7 +2,7 @@
   import { line, curveMonotoneX } from 'd3-shape'
   import { scaleLinear, scalePoint, scaleBand } from 'd3-scale'
   import type { CpiItem } from './types'
-  import { rebase, monthlyAverages, startYearLabel } from './chartMath'
+  import { rebase, monthlyAverages, startYearLabel, niceTicks } from './chartMath'
 
   let { item }: { item: CpiItem } = $props()
 
@@ -12,7 +12,7 @@
 
   const width = 1200
   const height = 520
-  const margin = { top: 24, right: 32, bottom: 40, left: 56 }
+  const margin = { top: 24, right: 46, bottom: 40, left: 56 }
 
   const rebased = $derived(rebase(item.series))
   const startYear = $derived(startYearLabel(item.periods))
@@ -53,8 +53,7 @@
 
   const yTicks = $derived.by(() => {
     const [d0, d1] = y.domain()
-    const step = (d1 - d0) / 4
-    return Array.from({ length: 5 }, (_, i) => Math.round(d0 + step * i))
+    return niceTicks(d0, d1)
   })
 
   const path = $derived.by(() => {
@@ -94,8 +93,7 @@
 
   const yMonthTicks = $derived.by(() => {
     const [d0, d1] = yMonth.domain()
-    const step = (d1 - d0) / 4
-    return Array.from({ length: 5 }, (_, i) => Math.round(d0 + step * i))
+    return niceTicks(d0, d1)
   })
 
   function onPointerMove(e: PointerEvent) {
@@ -148,13 +146,13 @@
       onpointerleave={onPointerLeave}
       role="img"
     >
-      {#each yTicks as t (t)}
+      {#each yTicks as t, ti (ti)}
         <line x1={margin.left} x2={width - margin.right} y1={y(t)} y2={y(t)} class="gridline" />
         <text x={margin.left - 12} y={y(t)} class="ytick" text-anchor="end" dominant-baseline="middle">{t}</text>
       {/each}
 
       <line x1={margin.left} x2={width - margin.right} y1={y(100)} y2={y(100)} class="gridline baseline" />
-      <text x={width - margin.right + 8} y={y(100)} class="ytick baseline-label" dominant-baseline="middle">100</text>
+      <text x={width - margin.right + 6} y={y(100)} class="ytick baseline-label" dominant-baseline="middle">100</text>
 
       <line x1={margin.left} x2={width - margin.right} y1={height - margin.bottom} y2={height - margin.bottom} class="axis" />
 
@@ -188,14 +186,14 @@
     <p class="note">以起始年（{startYear}）平均 = 100 重新計算，方便跨品項比較；滑過折線可看該月較起始年的變動</p>
   {:else}
     <svg viewBox="0 0 {width} {height}" class="chart" preserveAspectRatio="xMidYMid meet" role="img">
-      {#each yMonthTicks as t (t)}
+      {#each yMonthTicks as t, ti (ti)}
         <line x1={margin.left} x2={width - margin.right} y1={yMonth(t)} y2={yMonth(t)} class="gridline" />
         <text x={margin.left - 12} y={yMonth(t)} class="ytick" text-anchor="end" dominant-baseline="middle">{t}</text>
       {/each}
 
       {#if monthHasDip}
         <line x1={margin.left} x2={width - margin.right} y1={yMonth(100)} y2={yMonth(100)} class="gridline baseline" />
-        <text x={width - margin.right + 8} y={yMonth(100)} class="ytick baseline-label" dominant-baseline="middle">100</text>
+        <text x={width - margin.right + 6} y={yMonth(100)} class="ytick baseline-label" dominant-baseline="middle">100</text>
       {/if}
 
       <line x1={margin.left} x2={width - margin.right} y1={height - margin.bottom} y2={height - margin.bottom} class="axis" />
