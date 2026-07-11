@@ -1,15 +1,31 @@
 <script lang="ts">
   import type { CpiItem } from './types'
-  import { CATEGORY_ORDER, TYPE_LABEL, TYPE_ORDER, type PriceType } from './types'
+  import { CATEGORY_ORDER, TYPE_LABEL, TYPE_ORDER, type CategoryFilter, type PriceType } from './types'
   import { filterState, type SortMode } from './stores.svelte'
   import { fullpage } from './fullpage.svelte'
   import CardGrid from './CardGrid.svelte'
+  import iconFood from '../assets/hero/item14.svg?url'
+  import iconClothing from '../assets/hero/item07.svg?url'
+  import iconHousing from '../assets/hero/item06.svg?url'
+  import iconTransport from '../assets/hero/item10.svg?url'
+  import iconEducation from '../assets/hero/item04.svg?url'
+  import iconMisc from '../assets/hero/item12.svg?url'
 
   const SORT_OPTIONS: { key: SortMode; label: string }[] = [
     { key: 'default', label: '預設排序' },
     { key: 'change_desc', label: '漲幅最高' },
     { key: 'change_asc', label: '漲幅最低' },
   ]
+
+  // 醫藥保健類 has no matching hero illustration - drawn inline as a cross instead
+  const CATEGORY_ICON: Partial<Record<CategoryFilter, string>> = {
+    食物類: iconFood,
+    衣著類: iconClothing,
+    居住類: iconHousing,
+    交通及通訊類: iconTransport,
+    教養娛樂類: iconEducation,
+    雜項類: iconMisc,
+  }
 
   let { items, index }: { items: CpiItem[]; index: number } = $props()
 
@@ -28,28 +44,14 @@
 
 <div class="explorer">
   <div class="topbar">
-    <div class="cat-wrap">
-      <button class="cat-toggle" aria-expanded={catOpen} onclick={() => (catOpen = !catOpen)}>
-        {filterState.category === '全部' ? '全部類別' : filterState.category}
-        <span class="caret">⌄</span>
-      </button>
-      {#if catOpen}
-        <div class="cat-menu">
-          {#each CATEGORY_ORDER as c (c)}
-            <button
-              class="cat-item"
-              class:selected={filterState.category === c}
-              onclick={() => {
-                filterState.setCategory(c)
-                catOpen = false
-              }}
-            >
-              {c === '全部' ? '全部類別' : c}
-            </button>
-          {/each}
-        </div>
-      {/if}
-    </div>
+    <button
+      class="hamburger"
+      aria-label="切換類別篩選"
+      aria-expanded={catOpen}
+      onclick={() => (catOpen = !catOpen)}
+    >
+      <svg viewBox="0 0 24 24" aria-hidden="true"><line x1="3" y1="7" x2="21" y2="7" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="17" x2="21" y2="17" /></svg>
+    </button>
 
     <div class="tabs">
       <button class="tab" class:active={filterState.type === 'all'} onclick={() => filterState.setType('all')}>
@@ -66,6 +68,35 @@
       {/each}
     </div>
   </div>
+
+  {#if catOpen}
+    <div class="cat-icons">
+      {#each CATEGORY_ORDER as c (c)}
+        <button
+          class="cat-tile"
+          class:selected={filterState.category === c}
+          onclick={() => {
+            filterState.setCategory(c)
+            catOpen = false
+          }}
+        >
+          <span class="tile-icon">
+            {#if c === '全部'}
+              <span class="tile-all">全</span>
+            {:else if c === '醫藥保健類'}
+              <svg viewBox="0 0 48 48" class="tile-svg" aria-hidden="true">
+                <rect x="19" y="6" width="10" height="36" rx="2" />
+                <rect x="6" y="19" width="36" height="10" rx="2" />
+              </svg>
+            {:else}
+              <img src={CATEGORY_ICON[c]} alt="" class="tile-svg" />
+            {/if}
+          </span>
+          <span class="tile-label">{c}</span>
+        </button>
+      {/each}
+    </div>
+  {/if}
 
   <div class="toolbar">
     <input
@@ -110,55 +141,96 @@
     z-index: 5;
   }
 
-  .cat-wrap {
-    position: relative;
+  .hamburger {
     flex: 0 0 auto;
-  }
-
-  .cat-toggle {
-    border: none;
-    background: none;
-    font-size: 0.85rem;
-    font-weight: 800;
-    color: var(--ink);
+    width: 40px;
+    height: 40px;
     display: flex;
     align-items: center;
-    gap: 0.3rem;
-    padding: 0.5rem 0;
+    justify-content: center;
+    border: none;
+    background: var(--ink);
+    border-radius: 4px;
   }
 
-  .caret {
-    font-size: 1rem;
-    line-height: 0.6;
+  .hamburger svg {
+    width: 20px;
+    height: 20px;
   }
 
-  .cat-menu {
-    position: absolute;
-    top: 100%;
-    left: 0;
+  .hamburger line {
+    stroke: var(--bg);
+    stroke-width: 2;
+    stroke-linecap: round;
+  }
+
+  .cat-icons {
+    flex: 0 0 auto;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.1rem;
+    padding: 1rem;
+    border-bottom: 1px solid var(--line);
     background: var(--bg);
-    border: 1px solid var(--line);
-    min-width: 180px;
-    z-index: 10;
+  }
+
+  .cat-tile {
+    flex: 0 0 auto;
+    width: 84px;
     display: flex;
     flex-direction: column;
-  }
-
-  .cat-item {
+    align-items: center;
+    gap: 0.4rem;
     border: none;
     background: none;
-    text-align: left;
-    padding: 0.55rem 0.9rem;
-    font-size: 0.82rem;
+  }
+
+  .tile-icon {
+    width: 76px;
+    height: 76px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-card);
+    border: 1.5px solid var(--line);
+    border-radius: 16px;
+    transition: background 0.15s ease, border-color 0.15s ease;
+  }
+
+  .cat-tile.selected .tile-icon {
+    background: var(--steady);
+    border-color: var(--steady);
+  }
+
+  .tile-svg {
+    width: 68%;
+    height: 68%;
+    object-fit: contain;
+  }
+
+  svg.tile-svg rect {
+    fill: var(--ink);
+  }
+
+  .tile-all {
+    font-family: var(--font-display);
+    font-size: 1.4rem;
     color: var(--ink);
   }
 
-  .cat-item:hover {
-    background: var(--line-soft);
+  .cat-tile.selected .tile-all {
+    color: #fff;
   }
 
-  .cat-item.selected {
+  .tile-label {
+    font-size: 0.78rem;
     font-weight: 800;
+    color: var(--ink);
+    text-align: center;
+  }
+
+  .cat-tile.selected .tile-label {
+    color: var(--steady);
   }
 
   .tabs {
@@ -253,13 +325,23 @@
   }
 
   @media (max-width: 700px) {
-    .topbar {
-      flex-direction: column;
-      gap: 0.2rem;
-      align-items: stretch;
-    }
     .tabs {
       justify-content: flex-start;
+    }
+    .cat-icons {
+      gap: 0.7rem;
+      padding: 0.8rem;
+    }
+    .cat-tile {
+      width: 64px;
+    }
+    .tile-icon {
+      width: 58px;
+      height: 58px;
+      border-radius: 12px;
+    }
+    .tile-label {
+      font-size: 0.68rem;
     }
     .toolbar {
       flex-direction: column;
