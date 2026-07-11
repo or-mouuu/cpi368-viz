@@ -1,10 +1,13 @@
 <script lang="ts">
   import { fullpage } from './fullpage.svelte'
+  import type { CpiMeta } from './types'
+
+  let { meta }: { meta: CpiMeta } = $props()
 </script>
 
 <div class="intro">
   <p class="statement">
-    十年來，多數東西都變貴了。<br />
+    自{meta.baseYear}年以來，多數東西都變貴了。<br />
     但比「漲多少」更值得看的，是「怎麼漲」——<br />
     有的<span class="t-steady">持續上漲</span>、有的<span class="t-plateau">漲後不跌</span>、<br
     />有的<span class="t-surge">近期急漲</span>、有的<span class="t-wavy">波動上漲</span>，<br />

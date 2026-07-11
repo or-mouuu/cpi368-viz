@@ -1,10 +1,14 @@
 <script lang="ts">
   import Sparkline from './Sparkline.svelte'
   import { fullpage } from './fullpage.svelte'
-  import { RISING_TYPES, TYPE_LABEL, TYPE_DESC, type PriceType } from './types'
+  import { RISING_TYPES, TYPE_LABEL, TYPE_DESC, type CpiItem, type CpiMeta } from './types'
+  import { metaYearSpan } from './chartMath'
 
-  let { index }: { index: number } = $props()
+  let { index, items, meta }: { index: number; items: CpiItem[]; meta: CpiMeta } = $props()
   const active = $derived(fullpage.active === index)
+
+  const years = $derived(metaYearSpan(meta.dataStart, meta.dataEnd))
+  const risingCount = $derived(items.filter((it) => RISING_TYPES.includes(it.type)).length)
 
   const SAMPLE: Record<string, number[]> = {
     steady: [10, 10.4, 10.9, 11.2, 11.8, 12.1, 12.6, 13.2, 13.6, 14.1, 14.7, 15.2],
@@ -23,12 +27,12 @@
 
 <div class="shapes">
   <h2>「上漲」的四種漲相</h2>
-  <p class="lede">241 個上漲的品項，依「怎麼漲」分成四種性格</p>
+  <p class="lede">{risingCount} 個上漲的品項，依「怎麼漲」分成四種性格</p>
   <div class="cols">
     {#each RISING_TYPES as t, ti (t)}
       <div class="col type-{t}">
         <h3>{TYPE_LABEL[t]}</h3>
-        <p>{TYPE_DESC[t]}</p>
+        <p>{TYPE_DESC[t](years)}</p>
         <div class="chart">
           <Sparkline
             data={SAMPLE[t]}
@@ -40,7 +44,7 @@
             drawDuration={1300}
             drawDelay={ti * 220}
           />
-          <div class="years"><span>'16</span><span>'26</span></div>
+          <div class="years"><span>'{meta.dataStart.slice(2, 4)}</span><span>'{meta.dataEnd.slice(2, 4)}</span></div>
         </div>
         <p class="examples">{EXAMPLES[t]}</p>
       </div>

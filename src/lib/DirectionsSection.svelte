@@ -1,33 +1,40 @@
 <script lang="ts">
   import Sparkline from './Sparkline.svelte'
   import { fullpage } from './fullpage.svelte'
+  import { RISING_TYPES, type CpiItem, type CpiMeta } from './types'
+  import { metaYearSpan } from './chartMath'
 
-  let { index }: { index: number } = $props()
+  let { index, items, meta }: { index: number; items: CpiItem[]; meta: CpiMeta } = $props()
   const active = $derived(fullpage.active === index)
+  const years = $derived(metaYearSpan(meta.dataStart, meta.dataEnd))
 
-  const groups = [
+  const risingCount = $derived(items.filter((it) => RISING_TYPES.includes(it.type)).length)
+  const flatCount = $derived(items.filter((it) => it.type === 'flat').length)
+  const cheaperCount = $derived(items.filter((it) => it.type === 'cheaper').length)
+
+  const groups = $derived([
     {
       key: 'up',
       title: '上漲',
       color: 'var(--steady)',
-      desc: '十年漲逾10%，共 241 項——但漲法各有面貌，下一頁細看',
+      desc: `${years}年漲逾10%，共 ${risingCount} 項——但漲法各有面貌，下一頁細看`,
       sample: [10, 10.5, 11, 11.6, 12.1, 12.8, 13.3, 14, 14.6, 15.4, 16, 16.8],
     },
     {
       key: 'flat',
       title: '價格持平',
       color: 'var(--flat)',
-      desc: '十年變動不到10%，幾乎凍住，共 102 項',
+      desc: `${years}年變動不到10%，幾乎凍住，共 ${flatCount} 項`,
       sample: [10, 10.1, 9.95, 10.15, 10.05, 10.2, 10.1, 10.05, 10.2, 10.1, 10.25, 10.2],
     },
     {
       key: 'down',
       title: '越來越俗',
       color: 'var(--cheaper)',
-      desc: '比十年前更便宜，共 15 項',
+      desc: `比${years}年前更便宜，共 ${cheaperCount} 項`,
       sample: [14, 13.6, 13.7, 13.2, 12.8, 12.9, 12.3, 11.9, 11.6, 11.2, 10.8, 10.5],
     },
-  ]
+  ])
 </script>
 
 <div class="directions">
@@ -49,7 +56,7 @@
             drawDuration={1400}
             drawDelay={gi * 250}
           />
-          <div class="years"><span>'16</span><span>'26</span></div>
+          <div class="years"><span>'{meta.dataStart.slice(2, 4)}</span><span>'{meta.dataEnd.slice(2, 4)}</span></div>
         </div>
       </div>
     {/each}

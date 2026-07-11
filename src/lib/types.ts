@@ -17,6 +17,7 @@ export interface CpiMeta {
   itemCount: number
   dataStart: string
   dataEnd: string
+  baseYear: number
   basePeriod: string
   source: string
 }
@@ -40,13 +41,14 @@ export const TYPE_LABEL: Record<PriceType, string> = {
   cheaper: '越來越俗',
 }
 
-export const TYPE_DESC: Record<PriceType, string> = {
-  steady: '十年全程持續變貴，不知不覺回不去',
-  plateau: '前段漲完後停在高原，價格再也沒下來',
-  surge: '漲幅大半集中在最近三年',
-  wavy: '劇烈波動中越墊越高',
-  flat: '十年漲不到10%，幾乎凍住',
-  cheaper: '比十年前更便宜',
+// takes the number of years the data spans (varies by item; see chartMath.yearSpan)
+export const TYPE_DESC: Record<PriceType, (years: number) => string> = {
+  steady: (y) => `${y}年來全程持續變貴，不知不覺回不去`,
+  plateau: () => '前段漲完後停在高原，價格再也沒下來',
+  surge: () => '漲幅大半集中在最近三年',
+  wavy: () => '劇烈波動中越墊越高',
+  flat: (y) => `${y}年來變動不到10%，幾乎凍住`,
+  cheaper: (y) => `比${y}年前更便宜`,
 }
 
 export const CATEGORY_ORDER = [

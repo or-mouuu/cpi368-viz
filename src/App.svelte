@@ -58,9 +58,9 @@
   <div class="viewport">
     <div class="track" style="transform: translateY(-{fullpage.active * 100}%)">
       <section class="screen"><HeroSection meta={data.meta} /></section>
-      <section class="screen"><IntroSection /></section>
-      <section class="screen"><DirectionsSection index={2} /></section>
-      <section class="screen"><ShapesSection index={3} /></section>
+      <section class="screen"><IntroSection meta={data.meta} /></section>
+      <section class="screen"><DirectionsSection index={2} items={data.items} meta={data.meta} /></section>
+      <section class="screen"><ShapesSection index={3} items={data.items} meta={data.meta} /></section>
       <section class="screen"><ExplorerSection items={data.items} index={4} /></section>
       <section class="screen"><AboutSection meta={data.meta} /></section>
     </div>

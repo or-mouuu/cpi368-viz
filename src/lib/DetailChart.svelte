@@ -2,7 +2,7 @@
   import { line, curveMonotoneX } from 'd3-shape'
   import { scaleLinear, scalePoint, scaleBand } from 'd3-scale'
   import type { CpiItem } from './types'
-  import { rebase, monthlyAverages, startYearLabel, niceTicks } from './chartMath'
+  import { rebase, monthlyAverages, startYearLabel, yearSpan, niceTicks } from './chartMath'
 
   let { item }: { item: CpiItem } = $props()
 
@@ -220,7 +220,9 @@
         {/if}
       {/each}
     </svg>
-    <p class="note">以起始年（{startYear}）平均 = 100 重新計算後，各月在十年間的平均水準——看得出哪幾個月通常比較貴</p>
+    <p class="note">
+      以起始年（{startYear}）平均 = 100 重新計算後，各月在這 {yearSpan(item.periods)} 年間的平均水準——看得出哪幾個月通常比較貴
+    </p>
   {/if}
 </div>
 

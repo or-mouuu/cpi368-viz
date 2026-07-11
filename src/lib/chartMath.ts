@@ -48,6 +48,23 @@ export function startYearLabel(periods: string[]): string {
   return periods[0]?.split('-')[0] ?? ''
 }
 
+/** Whole-year span covered by a series, e.g. 162 months (2013-01..2026-06)
+ * -> 13. Individual items can have slightly different history lengths (some
+ * start a few months into the base year, a few have shorter runs), so this
+ * is computed per item rather than assumed to be a fixed "10 years". */
+export function yearSpan(periods: string[]): number {
+  return Math.max(1, Math.floor(periods.length / 12))
+}
+
+/** Same whole-year span, computed from a "YYYY-MM" start/end pair (e.g. a
+ * dataset's overall meta.dataStart/dataEnd) rather than a per-item series. */
+export function metaYearSpan(start: string, end: string): number {
+  const [sy, sm] = start.split('-').map(Number)
+  const [ey, em] = end.split('-').map(Number)
+  const months = (ey - sy) * 12 + (em - sm) + 1
+  return Math.max(1, Math.floor(months / 12))
+}
+
 /** Build 5 evenly-spaced axis ticks across a domain, picking enough decimal
  * precision that near-frozen items (whose whole 10-year range can be <1
  * index point) still get 5 visually distinct labels instead of "100 100

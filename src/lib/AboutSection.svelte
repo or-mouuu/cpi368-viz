@@ -1,8 +1,10 @@
 <script lang="ts">
   import type { CpiMeta } from './types'
   import { fullpage } from './fullpage.svelte'
+  import { metaYearSpan } from './chartMath'
 
   let { meta }: { meta: CpiMeta } = $props()
+  const years = $derived(metaYearSpan(meta.dataStart, meta.dataEnd))
 </script>
 
 <div class="about">
@@ -12,14 +14,14 @@
       <p>
         本站資料來自行政院主計總處「消費者物價基本分類暨項目群指數」（經
         <a href="https://data.gov.tw/dataset/9158" target="_blank" rel="noreferrer">政府資料開放平臺</a>
-        發布），涵蓋 CPI 架構下 368 個項目群的月指數，基期為民國110年（2021）＝100。每月 10
-        日自動抓取最新資料。目前呈現 {meta.itemCount} 項：有 10 項因 2013
-        年後才納入查價、歷史不足十年而未分類。
+        發布），涵蓋 CPI 架構下 368 個項目群的月指數，基期為民國110年（2021）＝100，資料回溯至 {meta.baseYear}
+        年（資料源最早可查年份）。每月 10 日自動抓取最新資料。目前呈現 {meta.itemCount} 項：少數品項因
+        {meta.baseYear} 年後才納入查價、或歷史資料過於稀疏而未分類。
       </p>
       <p>
         每個品項以 12 個月移動平均計算趨勢線，將「趨勢怎麼走」與「圍繞趨勢的季節震盪」分開衡量，再依規則分類：
-        十年趨勢漲逾 10% 為「上漲」，其中波動度大於 15% 者為<b>波動上漲</b>；漲幅過半集中在近三年者為<b>近期急漲</b>；
-        漲幅早已完成、近一年幾乎不再漲者為<b>漲後不跌</b>；其餘為<b>持續上漲</b>。十年變動在 −5%～+10% 之間為<b>價格持平</b>，低於
+        {years} 年趨勢漲逾 10% 為「上漲」，其中波動度大於 15% 者為<b>波動上漲</b>；漲幅過半集中在近三年者為<b>近期急漲</b>；
+        漲幅早已完成、近一年幾乎不再漲者為<b>漲後不跌</b>；其餘為<b>持續上漲</b>。{years} 年變動在 −5%～+10% 之間為<b>價格持平</b>，低於
         −5% 為<b>越來越俗</b>。
       </p>
       <p>

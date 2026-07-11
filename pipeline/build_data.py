@@ -37,10 +37,18 @@ CATEGORY_RANGES = [
     (340, 368, "雜項類"),
 ]
 
-ROLLING_YEARS = 10
 MONTHS_PER_YEAR = 12
-# 10 years of comparison window + the 12 months being compared = need at least this many months
-MIN_MONTHS_FOR_10Y = ROLLING_YEARS * MONTHS_PER_YEAR + MONTHS_PER_YEAR
+# Rebase every series to the earliest year the source actually has (2013) rather
+# than a rolling N-year window. Items first tracked later than this (e.g. 鯖魚/
+# 南瓜, only surveyed since 2022) are excluded - they can't be compared "since
+# 2013" at all. A handful of items that DO start in 2013 but have sparse early
+# coverage (some seasonal fruits) still start within BASE_YEAR itself, just not
+# on January - only the year is checked, not the month.
+BASE_YEAR = 2013
+# still need enough data points for the trend/shape math: a 12mo rolling
+# mean eats the first 11 months, and late3/momentum look back 37/13 months
+# into the resulting trend line
+MIN_MONTHS_FOR_TREND = MONTHS_PER_YEAR - 1 + 37
 
 # Classification thresholds (v3, 2026-07-11) - see docs/METHODOLOGY.md for rationale.
 VOLATILITY_THRESHOLD = 15.0  # % deviation around trend that separates年年震盪 from多年一次行情
@@ -162,12 +170,20 @@ def build_items(series: dict[str, dict[tuple[int, int], float]]) -> list[dict]:
         category = category_for_code(code)
 
         sorted_periods = sorted(points.keys())
-        if len(sorted_periods) < MIN_MONTHS_FOR_10Y:
+        if not sorted_periods or sorted_periods[0][0] > BASE_YEAR:
+            print(
+                f"[build] skip {code} {name}: first tracked {sorted_periods[0] if sorted_periods else 'never'}, "
+                f"not available since {BASE_YEAR}",
+                file=sys.stderr,
+            )
+            continue
+        if len(sorted_periods) < MIN_MONTHS_FOR_TREND:
             print(f"[build] skip {code} {name}: only {len(sorted_periods)} months of data", file=sys.stderr)
             continue
 
-        # keep a rolling ~10-year window (plus a little headroom) for the sparkline
-        window_periods = sorted_periods[-(ROLLING_YEARS * MONTHS_PER_YEAR + MONTHS_PER_YEAR):]
+        # use the item's full history from its first tracked month (all in
+        # BASE_YEAR or later, per the check above) through the latest release
+        window_periods = sorted_periods
         series_values = [points[p] for p in window_periods]
 
         metrics = shape_metrics(series_values)
@@ -219,6 +235,7 @@ def main() -> None:
         "itemCount": len(items),
         "dataStart": all_periods[0] if all_periods else None,
         "dataEnd": all_periods[-1] if all_periods else None,
+        "baseYear": BASE_YEAR,
         "basePeriod": "民國110年=100 (2021=100)",
         "source": "行政院主計總處 - 消費者物價基本分類暨項目群指數 (data.gov.tw dataset 9158)",
     }
