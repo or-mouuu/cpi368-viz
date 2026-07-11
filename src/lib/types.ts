@@ -1,4 +1,4 @@
-export type PriceType = 'hot' | 'normal' | 'falling' | 'seasonal'
+export type PriceType = 'steady' | 'plateau' | 'surge' | 'wavy' | 'flat' | 'cheaper'
 
 export interface CpiItem {
   id: number
@@ -6,7 +6,9 @@ export interface CpiItem {
   category: string
   type: PriceType
   change10y: number
-  seasonalVar: number
+  volatility: number
+  volatile: boolean
+  event: boolean
   series: number[]
   periods: string[]
 }
@@ -24,20 +26,27 @@ export interface CpiData {
   items: CpiItem[]
 }
 
-export const TYPE_ORDER: PriceType[] = ['hot', 'normal', 'falling', 'seasonal']
+// 宏觀三分：上漲（四種漲相）→ 持平 → 下跌
+export const TYPE_ORDER: PriceType[] = ['steady', 'plateau', 'surge', 'wavy', 'flat', 'cheaper']
+
+export const RISING_TYPES: PriceType[] = ['steady', 'plateau', 'surge', 'wavy']
 
 export const TYPE_LABEL: Record<PriceType, string> = {
-  hot: '漲相很兇',
-  normal: '漲相普通',
-  falling: '漲相下跌',
-  seasonal: '漲相隨季節',
+  steady: '持續上漲',
+  plateau: '漲後不跌',
+  surge: '近期急漲',
+  wavy: '波動上漲',
+  flat: '價格持平',
+  cheaper: '越來越俗',
 }
 
 export const TYPE_DESC: Record<PriceType, string> = {
-  hot: '和10年前相比漲幅超過15%',
-  normal: '和10年前相比漲幅介於0–15%',
-  falling: '和10年前相比價格下跌',
-  seasonal: '價格隨季節劇烈波動（12個月VAR>100）',
+  steady: '十年全程持續變貴，不知不覺回不去',
+  plateau: '前段漲完後停在高原，價格再也沒下來',
+  surge: '漲幅大半集中在最近三年',
+  wavy: '劇烈波動中越墊越高',
+  flat: '十年漲不到10%，幾乎凍住',
+  cheaper: '比十年前更便宜',
 }
 
 export const CATEGORY_ORDER = [

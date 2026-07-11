@@ -5,14 +5,19 @@
   --line: rgba(23, 20, 15, 0.85);
   --line-soft: rgba(23, 20, 15, 0.18);
 
-  --hot: #ff4200;
-  --hot-soft: #ffe0d1;
-  --normal: #f4906a;
-  --normal-soft: #fbe4d8;
-  --falling: #9bb7c4;
-  --falling-soft: #e4edf0;
-  --seasonal: #9a7bd6;
-  --seasonal-soft: #ebe3f8;
+  /* 上漲家族＝暖色系，持平＝大地色，下跌＝冷色 */
+  --steady: #ff4200;
+  --steady-soft: #ffe0d1;
+  --plateau: #a4441f;
+  --plateau-soft: #f0ddd2;
+  --surge: #ff8a00;
+  --surge-soft: #ffe9cc;
+  --wavy: #9a7bd6;
+  --wavy-soft: #ebe3f8;
+  --flat: #a89c7d;
+  --flat-soft: #eae5d6;
+  --cheaper: #9bb7c4;
+  --cheaper-soft: #e4edf0;
 
   --font-display: 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', system-ui, sans-serif;
   --font-body: 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', system-ui, sans-serif;
@@ -52,21 +57,29 @@ button {
   cursor: pointer;
 }
 
-.type-hot {
-  --type-color: var(--hot);
-  --type-soft: var(--hot-soft);
+.type-steady {
+  --type-color: var(--steady);
+  --type-soft: var(--steady-soft);
 }
-.type-normal {
-  --type-color: var(--normal);
-  --type-soft: var(--normal-soft);
+.type-plateau {
+  --type-color: var(--plateau);
+  --type-soft: var(--plateau-soft);
 }
-.type-falling {
-  --type-color: var(--falling);
-  --type-soft: var(--falling-soft);
+.type-surge {
+  --type-color: var(--surge);
+  --type-soft: var(--surge-soft);
 }
-.type-seasonal {
-  --type-color: var(--seasonal);
-  --type-soft: var(--seasonal-soft);
+.type-wavy {
+  --type-color: var(--wavy);
+  --type-soft: var(--wavy-soft);
+}
+.type-flat {
+  --type-color: var(--flat);
+  --type-soft: var(--flat-soft);
+}
+.type-cheaper {
+  --type-color: var(--cheaper);
+  --type-soft: var(--cheaper-soft);
 }
 
 ::selection {

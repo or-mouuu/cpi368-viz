@@ -42,6 +42,69 @@ MONTHS_PER_YEAR = 12
 # 10 years of comparison window + the 12 months being compared = need at least this many months
 MIN_MONTHS_FOR_10Y = ROLLING_YEARS * MONTHS_PER_YEAR + MONTHS_PER_YEAR
 
+# Classification thresholds (v3, 2026-07-11) - see docs/METHODOLOGY.md for rationale.
+VOLATILITY_THRESHOLD = 15.0  # % deviation around trend that separates年年震盪 from多年一次行情
+RISING_THRESHOLD = 10.0      # trend change % above which an item counts as 上漲
+FALLING_THRESHOLD = -5.0     # trend change % below which an item counts as 越來越俗
+SURGE_LATE_SHARE = 0.55      # share of the rise in the last 3 years -> 近期急漲
+PLATEAU_LATE_SHARE = 0.15    # rise essentially finished before the last 3 years -> 漲後不跌
+PLATEAU_MAX_MOMENTUM = 1.5   # % trend growth over the last 12 months still counts as flat
+
+
+def shape_metrics(series: list[float]) -> dict:
+    """Trajectory-shape metrics on a 12-month rolling-mean trend line.
+
+    The rolling mean strips seasonal oscillation so that trend direction and
+    the volatility *around* the trend can be measured independently."""
+    trend = [
+        statistics.mean(series[i - MONTHS_PER_YEAR + 1 : i + 1])
+        for i in range(MONTHS_PER_YEAR - 1, len(series))
+    ]
+    t0, tn = trend[0], trend[-1]
+    total_change = (tn / t0 - 1) * 100 if t0 else 0.0
+
+    deviations = [series[MONTHS_PER_YEAR - 1 + j] / trend[j] - 1 for j in range(len(trend)) if trend[j]]
+    volatility = statistics.pstdev(deviations) * 100 if len(deviations) > 1 else 0.0
+
+    total_gain = tn - t0
+    late3 = (tn - trend[-37]) / total_gain if abs(total_gain) > 1e-9 and len(trend) >= 37 else 0.0
+    momentum = (tn / trend[-13] - 1) * 100 if len(trend) >= 13 and trend[-13] else 0.0
+
+    peak = max(trend)
+    gain_at_peak = (peak / t0 - 1) * 100 if t0 else 0.0
+    retrace = (peak - tn) / (peak - t0) if peak > t0 * 1.001 else 0.0
+
+    return {
+        "total_change": total_change,
+        "volatility": volatility,
+        "late3": late3,
+        "momentum": momentum,
+        "gain_at_peak": gain_at_peak,
+        "retrace": retrace,
+    }
+
+
+def classify(m: dict) -> str:
+    """v3 漲相 classification: macro 上漲/持平/下跌, with the rising tier
+    subdivided by HOW it rose rather than how much."""
+    if m["total_change"] > RISING_THRESHOLD:
+        if m["volatility"] > VOLATILITY_THRESHOLD:
+            return "wavy"  # 波動上漲
+        if m["late3"] >= SURGE_LATE_SHARE:
+            return "surge"  # 近期急漲
+        if m["late3"] <= PLATEAU_LATE_SHARE and m["momentum"] < PLATEAU_MAX_MOMENTUM:
+            return "plateau"  # 漲後不跌
+        return "steady"  # 持續上漲
+    if m["total_change"] < FALLING_THRESHOLD:
+        return "cheaper"  # 越來越俗
+    return "flat"  # 價格持平
+
+
+def is_price_event(m: dict) -> bool:
+    """One-off boom-then-bust price events (egg shortage, garlic spike...):
+    rose >20% at peak, gave back >40% of the rise, and is not a seasonal oscillator."""
+    return m["gain_at_peak"] > 20 and m["retrace"] > 0.4 and m["volatility"] <= VOLATILITY_THRESHOLD
+
 
 def category_for_code(code: int) -> str:
     for lo, hi, name in CATEGORY_RANGES:
@@ -107,22 +170,8 @@ def build_items(series: dict[str, dict[tuple[int, int], float]]) -> list[dict]:
         window_periods = sorted_periods[-(ROLLING_YEARS * MONTHS_PER_YEAR + MONTHS_PER_YEAR):]
         series_values = [points[p] for p in window_periods]
 
-        recent_12 = [points[p] for p in sorted_periods[-MONTHS_PER_YEAR:]]
-        decade_ago_12 = [points[p] for p in sorted_periods[-(MIN_MONTHS_FOR_10Y):-(MIN_MONTHS_FOR_10Y - MONTHS_PER_YEAR)]]
-
-        recent_avg = statistics.mean(recent_12)
-        decade_avg = statistics.mean(decade_ago_12)
-        change10y = (recent_avg / decade_avg - 1) * 100 if decade_avg else 0.0
-        seasonal_var = statistics.variance(recent_12) if len(recent_12) > 1 else 0.0
-
-        if seasonal_var > 100:
-            price_type = "seasonal"
-        elif change10y > 15:
-            price_type = "hot"
-        elif change10y >= 0:
-            price_type = "normal"
-        else:
-            price_type = "falling"
+        metrics = shape_metrics(series_values)
+        price_type = classify(metrics)
 
         items.append(
             {
@@ -130,8 +179,10 @@ def build_items(series: dict[str, dict[tuple[int, int], float]]) -> list[dict]:
                 "name": name,
                 "category": category,
                 "type": price_type,
-                "change10y": round(change10y, 2),
-                "seasonalVar": round(seasonal_var, 2),
+                "change10y": round(metrics["total_change"], 2),
+                "volatility": round(metrics["volatility"], 2),
+                "volatile": metrics["volatility"] > VOLATILITY_THRESHOLD and price_type != "wavy",
+                "event": is_price_event(metrics),
                 "series": [round(v, 2) for v in series_values],
                 "periods": [f"{y}-{m:02d}" for y, m in window_periods],
             }
@@ -144,7 +195,7 @@ def sanity_check(items: list[dict]) -> None:
     if not (300 <= len(items) <= 400):
         raise RuntimeError(f"item count out of expected range: {len(items)}")
     types_present = {it["type"] for it in items}
-    missing = {"hot", "normal", "falling", "seasonal"} - types_present
+    missing = {"steady", "plateau", "surge", "wavy", "flat", "cheaper"} - types_present
     if missing:
         raise RuntimeError(f"no items found for type(s): {missing}")
     for it in items:

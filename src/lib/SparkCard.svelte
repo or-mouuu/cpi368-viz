@@ -7,7 +7,13 @@
 </script>
 
 <button class="card type-{item.type}" onclick={() => detailState.open(item.id)}>
-  <span class="name">{item.name}</span>
+  <span class="head">
+    <span class="name">{item.name}</span>
+    <span class="badges">
+      {#if item.event}<span class="badge" title="曾有一波大行情後回落">⚡</span>{/if}
+      {#if item.volatile}<span class="badge" title="價格劇烈波動">〰️</span>{/if}
+    </span>
+  </span>
   <Sparkline data={item.series} color="var(--type-color)" width={140} height={40} />
 </button>
 
@@ -31,10 +37,23 @@
     background: var(--type-soft);
   }
 
+  .head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.25rem;
+  }
+
   .name {
     font-size: 0.82rem;
     font-weight: 700;
     color: var(--ink);
     line-height: 1.3;
+  }
+
+  .badges {
+    flex: 0 0 auto;
+    font-size: 0.7rem;
+    line-height: 1;
   }
 </style>

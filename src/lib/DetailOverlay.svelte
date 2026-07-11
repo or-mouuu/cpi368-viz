@@ -33,7 +33,11 @@
         <div>
           <p class="category">{activeItem.category}</p>
           <h2>{activeItem.name}</h2>
-          <p class="type-label">{TYPE_LABEL[activeItem.type]} · 10年變動 {activeItem.change10y > 0 ? '+' : ''}{activeItem.change10y}%</p>
+          <p class="type-label">
+            {TYPE_LABEL[activeItem.type]} · 10年變動 {activeItem.change10y > 0 ? '+' : ''}{activeItem.change10y}%
+            {#if activeItem.event}　⚡曾有大行情後回落{/if}
+            {#if activeItem.volatile}　〰️價格劇烈波動{/if}
+          </p>
         </div>
         <button class="close" aria-label="關閉" onclick={() => detailState.close()}>✕</button>
       </header>

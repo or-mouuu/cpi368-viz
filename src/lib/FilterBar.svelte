@@ -108,21 +108,13 @@
     color: var(--bg);
   }
 
-  .tab.type-hot.active {
-    background: var(--hot);
+  .tab.active {
+    background: var(--type-color, var(--ink));
     color: #fff;
   }
-  .tab.type-normal.active {
-    background: var(--normal);
-    color: #fff;
-  }
-  .tab.type-falling.active {
-    background: var(--falling);
+  .tab.type-flat.active,
+  .tab.type-cheaper.active {
     color: var(--ink);
-  }
-  .tab.type-seasonal.active {
-    background: var(--seasonal);
-    color: #fff;
   }
 
   .categories {
