@@ -1,32 +1,44 @@
 <script lang="ts">
   import type { CpiMeta } from './types'
+  import { fullpage } from './fullpage.svelte'
+
   let { meta }: { meta: CpiMeta } = $props()
 
-  const icons = [
-    { emoji: '🍞', top: '8%', left: '6%', delay: '0s', size: '2.4rem' },
-    { emoji: '🎮', top: '4%', left: '22%', delay: '0.6s', size: '2rem' },
-    { emoji: '🖥️', top: '10%', left: '86%', delay: '0.3s', size: '2.6rem' },
-    { emoji: '🏠', top: '18%', left: '92%', delay: '1s', size: '2.2rem' },
-    { emoji: '🧻', top: '46%', left: '4%', delay: '0.9s', size: '2.3rem' },
-    { emoji: '🚗', top: '58%', left: '88%', delay: '0.4s', size: '2.4rem' },
-    { emoji: '🪴', top: '30%', left: '14%', delay: '1.3s', size: '2rem' },
-    { emoji: '👕', top: '66%', left: '10%', delay: '0.2s', size: '2.1rem' },
-    { emoji: '🍎', top: '78%', left: '18%', delay: '0.7s', size: '2.2rem' },
-    { emoji: '🥤', top: '76%', left: '82%', delay: '1.1s', size: '2.2rem' },
-    { emoji: '🧴', top: '86%', left: '90%', delay: '0.5s', size: '2rem' },
-    { emoji: '🌳', top: '90%', left: '70%', delay: '0.8s', size: '2.2rem' },
+  const icons = import.meta.glob('../assets/hero/*.svg', { eager: true, query: '?url', import: 'default' })
+  const urls = Object.keys(icons)
+    .sort()
+    .map((k) => icons[k] as string)
+
+  // scattered around the edges like the design mockup, floating slowly
+  const layout = [
+    { top: '6%', left: '4%', size: 92, delay: 0 },
+    { top: '4%', left: '17%', size: 76, delay: 0.7 },
+    { top: '30%', left: '9%', size: 84, delay: 1.4 },
+    { top: '55%', left: '4%', size: 96, delay: 0.3 },
+    { top: '76%', left: '12%', size: 88, delay: 1.1 },
+    { top: '90%', left: '28%', size: 72, delay: 0.5 },
+    { top: '6%', left: '84%', size: 90, delay: 0.9 },
+    { top: '24%', left: '92%', size: 78, delay: 0.2 },
+    { top: '46%', left: '88%', size: 92, delay: 1.6 },
+    { top: '68%', left: '93%', size: 74, delay: 0.6 },
+    { top: '84%', left: '84%', size: 88, delay: 1.2 },
+    { top: '92%', left: '64%', size: 70, delay: 0.4 },
+    { top: '88%', left: '46%', size: 78, delay: 1.5 },
+    { top: '2%', left: '64%', size: 72, delay: 0.8 },
   ]
 </script>
 
-<section class="hero">
+<div class="hero">
   <div class="icons" aria-hidden="true">
-    {#each icons as icon, i (i)}
-      <span
-        class="icon"
-        style="top:{icon.top}; left:{icon.left}; animation-delay:{icon.delay}; font-size:{icon.size}"
-      >
-        {icon.emoji}
-      </span>
+    {#each urls as url, i (url)}
+      {#if layout[i]}
+        <img
+          src={url}
+          alt=""
+          class="icon"
+          style="top:{layout[i].top}; left:{layout[i].left}; width:{layout[i].size}px; animation-delay:{layout[i].delay}s"
+        />
+      {/if}
     {/each}
   </div>
 
@@ -42,14 +54,14 @@
     {#if meta}
       <p class="meta">資料範圍：{meta.dataStart} ~ {meta.dataEnd}（{meta.basePeriod}）</p>
     {/if}
-    <div class="arrow">↓</div>
+    <button class="arrow" aria-label="往下捲動" onclick={() => fullpage.next()}>↓</button>
   </div>
-</section>
+</div>
 
 <style>
   .hero {
     position: relative;
-    min-height: 92vh;
+    height: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -64,10 +76,7 @@
 
   .icon {
     position: absolute;
-    display: inline-block;
-    filter: grayscale(1) contrast(1.1);
-    opacity: 0.75;
-    animation: float 5s ease-in-out infinite;
+    animation: float 5.5s ease-in-out infinite;
   }
 
   @keyframes float {
@@ -95,7 +104,7 @@
   }
 
   .accent {
-    color: var(--hot);
+    color: var(--steady);
   }
 
   .content p {
@@ -113,7 +122,10 @@
 
   .arrow {
     margin-top: 2rem;
+    border: none;
+    background: none;
     font-size: 1.4rem;
+    color: var(--ink);
     animation: bob 1.6s ease-in-out infinite;
   }
 

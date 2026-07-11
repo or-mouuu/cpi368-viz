@@ -3,14 +3,28 @@
   import SparkCard from './SparkCard.svelte'
   import { filterState, matchesFilter } from './stores.svelte'
 
-  let { items }: { items: CpiItem[] } = $props()
+  let { items, flyIn = false }: { items: CpiItem[]; flyIn?: boolean } = $props()
 
   const filtered = $derived(items.filter((it) => matchesFilter(it, filterState.type, filterState.category)))
+
+  const FLY_COUNT = 64 // only the first screenful assembles with the fly-in
+
+  // pseudo-random but deterministic scatter per card index
+  function flyStyle(i: number): string {
+    if (!flyIn || i >= FLY_COUNT) return ''
+    const angle = ((i * 137.5) % 360) * (Math.PI / 180) // golden-angle spread
+    const dist = 320 + ((i * 97) % 260)
+    const x = Math.round(Math.cos(angle) * dist)
+    const y = Math.round(Math.sin(angle) * dist)
+    const r = ((i * 53) % 21) - 10
+    const delay = i * 14
+    return `--fly-x:${x}px; --fly-y:${y}px; --fly-r:${r}deg; --fly-delay:${delay}ms`
+  }
 </script>
 
 <div class="grid">
-  {#each filtered as item (item.id)}
-    <SparkCard {item} />
+  {#each filtered as item, i (item.id)}
+    <SparkCard {item} flyStyle={flyStyle(i)} />
   {:else}
     <p class="empty">這個篩選條件下沒有項目</p>
   {/each}

@@ -3,10 +3,10 @@
   import Sparkline from './Sparkline.svelte'
   import { detailState } from './stores.svelte'
 
-  let { item }: { item: CpiItem } = $props()
+  let { item, flyStyle = '' }: { item: CpiItem; flyStyle?: string } = $props()
 </script>
 
-<button class="card type-{item.type}" onclick={() => detailState.open(item.id)}>
+<button class="card type-{item.type}" class:fly={flyStyle !== ''} style={flyStyle} onclick={() => detailState.open(item.id)}>
   <span class="head">
     <span class="name">{item.name}</span>
     <span class="badges">
@@ -31,6 +31,22 @@
     text-align: left;
     min-height: 92px;
     transition: background 0.15s ease;
+  }
+
+  .card.fly {
+    opacity: 0;
+    animation: fly-in 0.65s cubic-bezier(0.22, 1, 0.36, 1) var(--fly-delay, 0ms) forwards;
+  }
+
+  @keyframes fly-in {
+    from {
+      opacity: 0;
+      transform: translate(var(--fly-x, 0px), var(--fly-y, 60px)) rotate(var(--fly-r, 0deg));
+    }
+    to {
+      opacity: 1;
+      transform: translate(0, 0) rotate(0deg);
+    }
   }
 
   .card:hover {

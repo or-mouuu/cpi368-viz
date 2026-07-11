@@ -2,6 +2,7 @@
   import type { CpiItem } from './types'
   import { TYPE_LABEL } from './types'
   import { detailState, filterState, matchesFilter } from './stores.svelte'
+  import { fullpage } from './fullpage.svelte'
   import DetailChart from './DetailChart.svelte'
 
   let { items }: { items: CpiItem[] } = $props()
@@ -9,6 +10,11 @@
   const filtered = $derived(items.filter((it) => matchesFilter(it, filterState.type, filterState.category)))
   const activeItem = $derived(items.find((it) => it.id === detailState.activeId) ?? null)
   const activeIndex = $derived(filtered.findIndex((it) => it.id === detailState.activeId))
+
+  $effect(() => {
+    // while the overlay is open, arrow keys/wheel navigate items, not sections
+    fullpage.navLocked = activeItem !== null
+  })
 
   function step(delta: number) {
     if (filtered.length === 0) return
