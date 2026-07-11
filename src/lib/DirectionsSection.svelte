@@ -44,7 +44,7 @@
             width={220}
             height={110}
             color={g.color}
-            strokeWidth={3.5}
+            strokeWidth={5.25}
             draw={active}
             drawDuration={1400}
             drawDelay={gi * 250}

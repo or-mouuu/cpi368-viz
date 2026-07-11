@@ -7,7 +7,7 @@
     width = 140,
     height = 44,
     color = 'currentColor',
-    strokeWidth = 2,
+    strokeWidth = 3,
     draw = false,
     drawDuration = 1200,
     drawDelay = 0,

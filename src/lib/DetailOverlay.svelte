@@ -11,6 +11,11 @@
   const activeItem = $derived(items.find((it) => it.id === detailState.activeId) ?? null)
   const activeIndex = $derived(filtered.findIndex((it) => it.id === detailState.activeId))
 
+  const prevItem = $derived(
+    filtered.length ? filtered[(activeIndex - 1 + filtered.length) % filtered.length] : null,
+  )
+  const nextItem = $derived(filtered.length ? filtered[(activeIndex + 1) % filtered.length] : null)
+
   $effect(() => {
     // while the overlay is open, arrow keys/wheel navigate items, not sections
     fullpage.navLocked = activeItem !== null
@@ -33,28 +38,34 @@
 <svelte:window onkeydown={activeItem ? onKeydown : undefined} />
 
 {#if activeItem}
-  <div class="overlay" role="dialog" aria-modal="true">
-    <div class="panel type-{activeItem.type}">
-      <header>
-        <div>
-          <p class="category">{activeItem.category}</p>
-          <h2>{activeItem.name}</h2>
-          <p class="type-label">
-            {TYPE_LABEL[activeItem.type]} · 10年變動 {activeItem.change10y > 0 ? '+' : ''}{activeItem.change10y}%
-            {#if activeItem.event}　⚡曾有大行情後回落{/if}
-            {#if activeItem.volatile}　〰️價格劇烈波動{/if}
-          </p>
-        </div>
-        <button class="close" aria-label="關閉" onclick={() => detailState.close()}>✕</button>
-      </header>
+  <div class="overlay type-{activeItem.type}" role="dialog" aria-modal="true">
+    <header>
+      <div>
+        <p class="category">{activeItem.category}</p>
+        <h2>{activeItem.name}</h2>
+        <p class="type-label">
+          {TYPE_LABEL[activeItem.type]} · 10年變動 {activeItem.change10y > 0 ? '+' : ''}{activeItem.change10y}%
+          {#if activeItem.event}　⚡曾有大行情後回落{/if}
+          {#if activeItem.volatile}　〰️價格劇烈波動{/if}
+        </p>
+      </div>
+      <button class="close" aria-label="關閉" onclick={() => detailState.close()}>✕</button>
+    </header>
 
-      <div class="chart-wrap">
-        <button class="nav prev" aria-label="上一個" onclick={() => step(-1)}>‹</button>
+    <div class="chart-wrap">
+      <button class="nav prev" aria-label="上一個" onclick={() => step(-1)}>
+        <span class="chev">‹</span>
+        {#if prevItem}<span class="nav-name">{prevItem.name}</span>{/if}
+      </button>
+
+      <div class="chart-area">
         <DetailChart item={activeItem} />
-        <button class="nav next" aria-label="下一個" onclick={() => step(1)}>›</button>
       </div>
 
-      <p class="note">指數基期：民國110年=100（2021=100）</p>
+      <button class="nav next" aria-label="下一個" onclick={() => step(1)}>
+        {#if nextItem}<span class="nav-name">{nextItem.name}</span>{/if}
+        <span class="chev">›</span>
+      </button>
     </div>
   </div>
 {/if}
@@ -64,20 +75,10 @@
     position: fixed;
     inset: 0;
     z-index: 50;
-    background: rgba(23, 20, 15, 0.55);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 1.5rem;
-  }
-
-  .panel {
     background: var(--bg);
-    width: min(920px, 100%);
-    max-height: 90vh;
-    overflow-y: auto;
-    border: 2px solid var(--ink);
-    padding: 1.5rem 1.5rem 1.25rem;
+    display: flex;
+    flex-direction: column;
+    padding: 1.5rem clamp(1rem, 4vw, 3rem) 1rem;
   }
 
   header {
@@ -85,23 +86,23 @@
     align-items: flex-start;
     justify-content: space-between;
     gap: 1rem;
-    margin-bottom: 0.75rem;
+    flex: 0 0 auto;
   }
 
   .category {
-    font-size: 0.8rem;
+    font-size: 0.85rem;
     color: var(--line);
-    margin-bottom: 0.15rem;
+    margin-bottom: 0.2rem;
   }
 
   h2 {
-    font-size: 1.6rem;
+    font-size: clamp(1.6rem, 4vw, 2.4rem);
     font-weight: 800;
   }
 
   .type-label {
-    margin-top: 0.35rem;
-    font-size: 0.85rem;
+    margin-top: 0.4rem;
+    font-size: 0.9rem;
     font-weight: 700;
     color: var(--type-color);
   }
@@ -109,39 +110,62 @@
   .close {
     background: none;
     border: none;
-    font-size: 1.3rem;
+    font-size: 1.6rem;
     line-height: 1;
     padding: 0.25rem 0.5rem;
     color: var(--ink);
   }
 
   .chart-wrap {
+    flex: 1 1 auto;
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: clamp(0.5rem, 2vw, 2rem);
+    min-height: 0;
+    padding: 1rem 0;
+  }
+
+  .chart-area {
+    flex: 1 1 auto;
+    height: 100%;
+    min-width: 0;
   }
 
   .nav {
     flex: 0 0 auto;
-    width: 36px;
-    height: 36px;
-    border: 1px solid var(--line);
-    background: var(--bg);
-    border-radius: 50%;
-    font-size: 1.2rem;
+    max-width: 140px;
+    border: none;
+    background: none;
     display: flex;
+    flex-direction: column;
     align-items: center;
-    justify-content: center;
-  }
-  .nav:hover {
-    background: var(--ink);
-    color: var(--bg);
+    gap: 0.3rem;
+    color: var(--ink);
+    padding: 0.5rem;
   }
 
-  .note {
-    margin-top: 0.5rem;
-    font-size: 0.72rem;
-    color: var(--line);
-    text-align: right;
+  .chev {
+    font-size: 2rem;
+    line-height: 1;
+  }
+
+  .nav-name {
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-align: center;
+    line-height: 1.3;
+  }
+
+  .nav:hover .nav-name {
+    text-decoration: underline;
+  }
+
+  @media (max-width: 700px) {
+    .nav {
+      max-width: 64px;
+    }
+    .nav-name {
+      display: none;
+    }
   }
 </style>

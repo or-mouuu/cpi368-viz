@@ -35,7 +35,7 @@
             width={190}
             height={95}
             color="var(--type-color)"
-            strokeWidth={3.5}
+            strokeWidth={5.25}
             draw={active}
             drawDuration={1300}
             drawDelay={ti * 220}

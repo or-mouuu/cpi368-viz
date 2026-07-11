@@ -21,6 +21,7 @@
 
   --font-display: 'Dela Gothic One', 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', system-ui, sans-serif;
   --font-body: 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', system-ui, sans-serif;
+  --font-numeric: 'Roboto', 'Noto Sans TC', system-ui, sans-serif;
 
   --radius-card: 2px;
   --gap: 1px;
