@@ -168,7 +168,7 @@
 
   .cat-tile {
     flex: 0 0 auto;
-    width: 84px;
+    width: 96px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -178,25 +178,23 @@
   }
 
   .tile-icon {
-    width: 76px;
-    height: 76px;
+    width: 92px;
+    height: 92px;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--bg-card);
-    border: 1.5px solid var(--line);
+    background: none;
     border-radius: 16px;
-    transition: background 0.15s ease, border-color 0.15s ease;
+    transition: background 0.15s ease;
   }
 
   .cat-tile.selected .tile-icon {
     background: var(--steady);
-    border-color: var(--steady);
   }
 
   .tile-svg {
-    width: 72%;
-    height: 72%;
+    width: 88%;
+    height: 88%;
     object-fit: contain;
   }
 
@@ -226,17 +224,24 @@
   .tab {
     border: none;
     background: none;
-    padding: 0.5rem 0.65rem;
+    padding: 0.5rem 0.8rem;
     font-size: 0.85rem;
     font-weight: 800;
     letter-spacing: 0.03em;
-    color: rgba(23, 20, 15, 0.45);
+    color: var(--type-color, var(--ink));
     white-space: nowrap;
+    border-radius: 999px;
+    transition: background 0.15s ease, color 0.15s ease;
   }
 
   .tab.active {
-    color: var(--type-color, var(--ink));
-    border-bottom: 2px solid var(--type-color, var(--ink));
+    background: var(--type-color, var(--ink));
+    color: #fff;
+  }
+
+  .tab.type-flat.active,
+  .tab.type-cheaper.active {
+    color: var(--ink);
   }
 
   .toolbar {
@@ -311,11 +316,11 @@
       padding: 0.8rem;
     }
     .cat-tile {
-      width: 64px;
+      width: 74px;
     }
     .tile-icon {
-      width: 58px;
-      height: 58px;
+      width: 70px;
+      height: 70px;
       border-radius: 12px;
     }
     .tile-label {
