@@ -17,14 +17,14 @@ def get_rule_category(item):
         'surge': '近期急漲',
         'plateau': '漲後不跌',
         'volatile': '波動上漲', # although some volatile are flat, but if change10y > 10 it's 波動上漲
-        'flat': '價格持平',
+        'flat': '沒什麼漲',
         'down': '越來越俗'
     }
     
     # If the item has a type, use it, otherwise fallback
     t = item.get('type')
     if t in cat_map:
-        if cat_map[t] == '價格持平' and item.get('change10y', 0) > 10:
+        if cat_map[t] == '沒什麼漲' and item.get('change10y', 0) > 10:
             # this shouldn't happen per rules but just in case
             return '持續上漲'
         return cat_map[t]

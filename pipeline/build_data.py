@@ -9,6 +9,7 @@ import re
 import statistics
 import sys
 import xml.etree.ElementTree as ET
+import numpy as np
 from pathlib import Path
 
 RAW_XML = Path(__file__).parent / "raw" / "cpi_items.xml"
@@ -52,7 +53,7 @@ MIN_MONTHS_FOR_TREND = MONTHS_PER_YEAR - 1 + 37
 
 # Classification thresholds (v3 2026-07-11; v3.1 steady split 2026-07-11) - see docs/METHODOLOGY.md.
 VOLATILITY_THRESHOLD = 15.0  # % deviation around trend that separates年年震盪 from多年一次行情
-RISING_THRESHOLD = 10.0      # trend change % above which an item counts as 上漲
+RISING_THRESHOLD = 15.0      # trend change % above which an item counts as 上漲
 FALLING_THRESHOLD = -5.0     # trend change % below which an item counts as 越來越俗
 SURGE_LATE_SHARE = 0.55      # share of the rise in the last 3 years -> 近期急漲
 PLATEAU_LATE_SHARE = 0.15    # rise essentially finished before the last 3 years -> 漲後不跌
@@ -60,40 +61,42 @@ PLATEAU_MAX_MOMENTUM = 1.5   # % trend growth over the last 12 months still coun
 # v3.1: the old 持續上漲 blob (47% of items) is split by comparing the trend's
 # first-half vs second-half slope, following the shape-clustering analysis in
 # analysis/cluster_increasing.py + compare_classifications.py
-ACCEL_SLOPE_RATIO = 2.5   # second-half slope > 2.5x first-half -> 越漲越快
-ACCEL_MIN_SLOPE2 = 0.5    # ...and the late slope must be meaningful on its own
+ACCEL_SLOPE_RATIO = 2.5      # slope2 must be X times slope1 to count as accelerating
+ACCEL_MIN_SLOPE2 = 3.5       # slope2 must be at least this steep (normalized) to be visually meaningful on its own
 DECEL_SLOPE_RATIO = 2.0   # first-half slope > 2x second-half -> merged into 漲後不跌
 
 
 def shape_metrics(series: list[float]) -> dict:
-    """Trajectory-shape metrics on a 12-month rolling-mean trend line.
-
-    The rolling mean strips seasonal oscillation so that trend direction and
-    the volatility *around* the trend can be measured independently."""
     trend = [
         statistics.mean(series[i - MONTHS_PER_YEAR + 1 : i + 1])
         for i in range(MONTHS_PER_YEAR - 1, len(series))
     ]
     t0, tn = trend[0], trend[-1]
     total_change = (tn / t0 - 1) * 100 if t0 else 0.0
-
-    deviations = [series[MONTHS_PER_YEAR - 1 + j] / trend[j] - 1 for j in range(len(trend)) if trend[j]]
-    volatility = statistics.pstdev(deviations) * 100 if len(deviations) > 1 else 0.0
-
+    
+    mean_level = statistics.mean(trend)
     total_gain = tn - t0
     late3 = (tn - trend[-37]) / total_gain if abs(total_gain) > 1e-9 and len(trend) >= 37 else 0.0
-    momentum = (tn / trend[-13] - 1) * 100 if len(trend) >= 13 and trend[-13] else 0.0
-
-    peak = max(trend)
-    gain_at_peak = (peak / t0 - 1) * 100 if t0 else 0.0
-    retrace = (peak - tn) / (peak - t0) if peak > t0 * 1.001 else 0.0
-
-    # first-half vs second-half trend slope, normalized by the trend's mean
-    # level (x1000) so items of different price levels are comparable
+    
     half = len(trend) // 2
-    mean_level = statistics.mean(trend)
     slope1 = _ls_slope(trend[:half]) / mean_level * 1000 if mean_level else 0.0
     slope2 = _ls_slope(trend[half:]) / mean_level * 1000 if mean_level else 0.0
+    
+    momentum = (tn - trend[-13]) / mean_level * 100 if len(trend) >= 13 and mean_level else 0.0
+    
+    jumps = [trend[i] - trend[i-12] for i in range(12, len(trend))]
+    max_jump = max(jumps) if jumps else 0.0
+    max_jump_share = max_jump / total_gain if total_gain > 0 else 0.0
+    
+    peak = max(trend)
+    retrace = (peak - tn) / abs(total_gain) if total_gain > 0 else 0.0
+    gain_at_peak = (peak / t0 - 1) * 100 if t0 else 0.0
+    
+    raw_diffs = [series[i] - series[i-1] for i in range(1, len(series))]
+    volatility = statistics.stdev(raw_diffs) / mean_level * 100 if len(raw_diffs) > 1 and mean_level else 0.0
+    
+    trend_diff = [trend[i] - trend[i-1] for i in range(1, len(trend))]
+    wiggles = sum(1 for d in trend_diff if abs(d) / mean_level > 0.01) if mean_level else 0
 
     return {
         "total_change": total_change,
@@ -102,6 +105,8 @@ def shape_metrics(series: list[float]) -> dict:
         "momentum": momentum,
         "gain_at_peak": gain_at_peak,
         "retrace": retrace,
+        "max_jump_share": max_jump_share,
+        "spike_count": wiggles,  # reused field name for compatibility
         "slope1": slope1,
         "slope2": slope2,
     }
@@ -120,25 +125,58 @@ def _ls_slope(values: list[float]) -> float:
 
 
 def classify(m: dict) -> str:
-    """v3.1 漲相 classification: macro 上漲/持平/下跌, with the rising tier
-    subdivided by HOW it rose rather than how much. The former catch-all
-    持續上漲 is further split by slope shape (accelerating vs linear), with
-    clearly decelerating items folded into 漲後不跌."""
-    if m["total_change"] > RISING_THRESHOLD:
-        if m["volatility"] > VOLATILITY_THRESHOLD:
-            return "wavy"  # 波動上漲
-        if m["late3"] >= SURGE_LATE_SHARE:
-            return "surge"  # 近期急漲
-        if m["late3"] <= PLATEAU_LATE_SHARE and m["momentum"] < PLATEAU_MAX_MOMENTUM:
-            return "plateau"  # 漲後不跌
-        if m["slope1"] > DECEL_SLOPE_RATIO * max(m["slope2"], 0.01):
-            return "plateau"  # 早期漲完、近年明顯趨緩 -> 性格上就是漲後不跌
-        if m["slope2"] > ACCEL_SLOPE_RATIO * max(m["slope1"], 0.01) and m["slope2"] > ACCEL_MIN_SLOPE2:
-            return "accel"  # 越漲越快
-        return "steady"  # 穩定上漲
-    if m["total_change"] < FALLING_THRESHOLD:
-        return "cheaper"  # 越來越俗
-    return "flat"  # 價格持平
+    """Rigorous classification rules (v3.2)"""
+    if m["total_change"] < -5.0: return "cheaper"
+    if m["total_change"] < 15.0: return "flat"
+    
+    is_wavy = m["volatility"] >= 3.5 or m["spike_count"] >= 12
+    
+    is_plateau = False
+    if m["momentum"] < 4.0:
+        if m["max_jump_share"] >= 0.35:
+            is_plateau = True
+        elif m["late3"] <= 0.25 and m["max_jump_share"] >= 0.18:
+            if m["spike_count"] >= 1 or m["momentum"] > 3.0: 
+                is_plateau = True
+    
+    if is_plateau and m["volatility"] > 6.0 and m["max_jump_share"] < 0.60:
+        is_plateau = False
+    if is_plateau and m["volatility"] > 10.0:
+        is_plateau = False
+    if is_plateau and m["late3"] > 0.40:
+        is_plateau = False
+    if is_plateau and m["volatility"] > 4.5 and m["spike_count"] >= 20:
+        is_plateau = False
+        
+    if m["retrace"] > 0.25 and not (is_plateau and m["max_jump_share"] > 0.40):
+        return "wavy"
+    
+    is_surge = False
+    if m["late3"] >= 0.52:
+        is_surge = True
+    elif m["late3"] >= 0.48 and m["slope2"] > 2.7:
+        is_surge = True
+    elif m["slope2"] > 1.5 * max(m["slope1"], 0.01) and m["slope2"] > 3.2:
+        if m["momentum"] >= 3.0 or m["slope2"] > 8.0:
+            is_surge = True
+        
+    if is_plateau:
+        if is_surge and m["slope2"] > 8.0:
+            return "surge"
+        return "plateau"
+        
+    if is_surge:
+        if m["volatility"] > 4.5:
+            return "wavy"
+        return "surge"
+        
+    if is_wavy:
+        return "wavy"
+        
+    if m["momentum"] >= 10.0:
+        return "surge"
+        
+    return "steady"
 
 
 def is_price_event(m: dict) -> bool:
@@ -240,11 +278,41 @@ def build_items(series: dict[str, dict[tuple[int, int], float]]) -> list[dict]:
     return items
 
 
+def compute_similarity(items: list[dict]) -> None:
+    for i, item1 in enumerate(items):
+        similarities = []
+        for j, item2 in enumerate(items):
+            if i == j:
+                continue
+            
+            periods1 = item1["periods"]
+            periods2 = item2["periods"]
+            
+            start_p = max(periods1[0], periods2[0])
+            if start_p not in periods1 or start_p not in periods2:
+                continue
+                
+            idx1 = periods1.index(start_p)
+            idx2 = periods2.index(start_p)
+            
+            s1 = item1["series"][idx1:]
+            s2 = item2["series"][idx2:]
+            
+            if len(s1) > 1 and len(s1) == len(s2):
+                with np.errstate(divide='ignore', invalid='ignore'):
+                    corr = np.corrcoef(s1, s2)[0, 1]
+                    if not np.isnan(corr) and corr > 0.6:
+                        similarities.append({"id": item2["id"], "score": float(corr)})
+                        
+        similarities.sort(key=lambda x: x["score"], reverse=True)
+        item1["similar"] = similarities[:5]
+
+
 def sanity_check(items: list[dict]) -> None:
     if not (300 <= len(items) <= 400):
         raise RuntimeError(f"item count out of expected range: {len(items)}")
     types_present = {it["type"] for it in items}
-    missing = {"steady", "accel", "plateau", "surge", "wavy", "flat", "cheaper"} - types_present
+    missing = {"steady", "plateau", "surge", "wavy", "flat", "cheaper"} - types_present
     if missing:
         raise RuntimeError(f"no items found for type(s): {missing}")
     for it in items:
@@ -261,6 +329,7 @@ def main() -> None:
         raise SystemExit(f"raw XML not found at {RAW_XML}, run fetch.py first")
     series = load_series()
     items = build_items(series)
+    compute_similarity(items)
     sanity_check(items)
 
     all_periods = sorted({p for it in items for p in it["periods"]})

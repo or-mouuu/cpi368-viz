@@ -8,8 +8,6 @@
   /* 上漲家族＝暖色系，持平＝大地色，下跌＝冷色 */
   --surge: #ff8a00;
   --surge-soft: #ffe9cc;
-  --accel: #c1121f;
-  --accel-soft: #f3d3d6;
   --steady: #ff4200;
   --steady-soft: #ffe0d1;
   --plateau: #a4441f;
@@ -60,9 +58,9 @@ button {
   cursor: pointer;
 }
 
-.type-accel {
-  --type-color: var(--accel);
-  --type-soft: var(--accel-soft);
+.type-surge {
+  --type-color: var(--surge);
+  --type-soft: var(--surge-soft);
 }
 .type-steady {
   --type-color: var(--steady);

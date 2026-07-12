@@ -6,8 +6,8 @@
 export const SECTION_COUNT = 6
 export const EXPLORER_INDEX = 4 // the free-scrolling grid section
 
-const TRANSITION_MS = 750
-const WHEEL_THRESHOLD = 30 // accumulated deltaY before a move triggers
+const TRANSITION_MS = 600
+const WHEEL_THRESHOLD = 60 // accumulated deltaY before a move triggers
 
 class FullPageState {
   active = $state(0)
@@ -50,8 +50,8 @@ class FullPageState {
 
   handleWheel(e: WheelEvent) {
     if (this.navLocked) return
-    const inExplorer = this.active === EXPLORER_INDEX
-    if (inExplorer) {
+    const hasScroller = this.active === EXPLORER_INDEX || this.active === SECTION_COUNT - 1
+    if (hasScroller) {
       // let the inner scroller consume the event unless it's at an edge
       if (e.deltaY > 0 && !this.#scrollerAtBottom()) return
       if (e.deltaY < 0 && !this.#scrollerAtTop()) return
@@ -70,12 +70,13 @@ class FullPageState {
 
   handleKey(e: KeyboardEvent) {
     if (this.navLocked) return
+    const hasScroller = this.active === EXPLORER_INDEX || this.active === SECTION_COUNT - 1
     if (e.key === 'ArrowDown' || e.key === 'PageDown') {
-      if (this.active === EXPLORER_INDEX && !this.#scrollerAtBottom()) return
+      if (hasScroller && !this.#scrollerAtBottom()) return
       e.preventDefault()
       this.next()
     } else if (e.key === 'ArrowUp' || e.key === 'PageUp') {
-      if (this.active === EXPLORER_INDEX && !this.#scrollerAtTop()) return
+      if (hasScroller && !this.#scrollerAtTop()) return
       e.preventDefault()
       this.prev()
     }
@@ -88,8 +89,9 @@ class FullPageState {
   handleTouchEnd(e: TouchEvent) {
     if (this.navLocked) return
     const dy = this.#touchStartY - e.changedTouches[0].clientY
-    if (Math.abs(dy) < 50) return
-    if (this.active === EXPLORER_INDEX) {
+    if (Math.abs(dy) < 100) return
+    const hasScroller = this.active === EXPLORER_INDEX || this.active === SECTION_COUNT - 1
+    if (hasScroller) {
       if (dy > 0 && !this.#scrollerAtBottom()) return
       if (dy < 0 && !this.#scrollerAtTop()) return
     }

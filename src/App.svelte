@@ -77,7 +77,7 @@
 
   .track {
     height: 100%;
-    transition: transform 750ms cubic-bezier(0.77, 0, 0.175, 1);
+    transition: transform 600ms cubic-bezier(0.6, 0.04, 0.3, 1);
     will-change: transform;
   }
 

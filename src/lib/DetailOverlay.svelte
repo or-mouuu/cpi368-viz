@@ -5,8 +5,11 @@
   import { fullpage } from './fullpage.svelte'
   import { yearSpan } from './chartMath'
   import DetailChart from './DetailChart.svelte'
+  import Sparkline from './Sparkline.svelte'
 
   let { items }: { items: CpiItem[] } = $props()
+
+  const byId = $derived(new Map(items.map((it) => [it.id, it])))
 
   const filtered = $derived(items.filter((it) => matchesFilter(it, filterState.type, filterState.categories)))
   const activeItem = $derived(items.find((it) => it.id === detailState.activeId) ?? null)
@@ -16,6 +19,12 @@
     filtered.length ? filtered[(activeIndex - 1 + filtered.length) % filtered.length] : null,
   )
   const nextItem = $derived(filtered.length ? filtered[(activeIndex + 1) % filtered.length] : null)
+
+  const similarItems = $derived(
+    (activeItem?.similar ?? [])
+      .map((s) => ({ item: byId.get(s.id), score: s.score }))
+      .filter((s): s is { item: CpiItem; score: number } => !!s.item),
+  )
 
   $effect(() => {
     // while the overlay is open, arrow keys/wheel navigate items, not sections
@@ -68,6 +77,26 @@
         {#if nextItem}<span class="nav-name">{shortName(nextItem.name)}</span>{/if}
       </button>
     </div>
+
+    {#if similarItems.length}
+      <div class="similar">
+        <p class="similar-title">走勢最像的品項</p>
+        <div class="similar-row">
+          {#each similarItems as { item, score } (item.id)}
+            <button class="similar-card type-{item.type}" onclick={() => detailState.open(item.id)}>
+              <Sparkline data={item.series} color="var(--type-color)" width={110} height={32} strokeWidth={2.5} />
+              <span class="similar-name">{shortName(item.name)}</span>
+              <span class="similar-meta">
+                相似度 {Math.round(score * 100)}%
+                {#if item.category !== activeItem?.category}
+                  <span class="similar-cross">・{item.category}</span>
+                {/if}
+              </span>
+            </button>
+          {/each}
+        </div>
+      </div>
+    {/if}
   </div>
 {/if}
 
@@ -168,5 +197,63 @@
     .nav-name {
       display: none;
     }
+  }
+
+  .similar {
+    flex: 0 0 auto;
+    margin-top: 0.5rem;
+  }
+
+  .similar-title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--line);
+    margin-bottom: 0.8rem;
+  }
+
+  .similar-row {
+    display: flex;
+    gap: 1rem;
+    overflow-x: auto;
+    padding-bottom: 0.5rem;
+  }
+
+  .similar-card {
+    flex: 0 0 130px;
+    background: var(--surface);
+    border: 1px solid var(--surface);
+    border-radius: 8px;
+    padding: 0.8rem;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.4rem;
+    text-align: left;
+    transition: transform 0.1s;
+  }
+
+  .similar-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--type-color);
+  }
+
+  .similar-name {
+    font-size: 0.9rem;
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--ink);
+    margin-top: 0.2rem;
+  }
+
+  .similar-meta {
+    font-size: 0.75rem;
+    color: var(--line);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.2rem;
+  }
+
+  .similar-cross {
+    color: var(--type-color);
   }
 </style>

@@ -17,14 +17,14 @@
       key: 'up',
       title: '上漲',
       color: 'var(--steady)',
-      desc: `${years}年漲逾10%，共 ${risingCount} 項——但漲法各有面貌，下一頁細看`,
+      desc: `${years}年漲逾15%，共 ${risingCount} 項——但漲法各有面貌，下一頁細看`,
       sample: [10, 10.5, 11, 11.6, 12.1, 12.8, 13.3, 14, 14.6, 15.4, 16, 16.8],
     },
     {
       key: 'flat',
-      title: '價格持平',
+      title: '沒什麼漲',
       color: 'var(--flat)',
-      desc: `${years}年變動不到10%，幾乎凍住，共 ${flatCount} 項`,
+      desc: `${years}年變動不到15%，幾乎凍住，共 ${flatCount} 項`,
       sample: [10, 10.1, 9.95, 10.15, 10.05, 10.2, 10.1, 10.05, 10.2, 10.1, 10.25, 10.2],
     },
     {
