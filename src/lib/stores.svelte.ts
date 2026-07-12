@@ -4,7 +4,8 @@ export type SortMode = 'default' | 'change_desc' | 'change_asc'
 
 class FilterState {
   type = $state<PriceType | 'all'>('all')
-  category = $state<CategoryFilter>('全部')
+  // empty set = 「全部」(no category filter); otherwise the set of selected categories
+  categories = $state<Set<CategoryFilter>>(new Set())
   categoryOpen = $state(false)
   search = $state('')
   sort = $state<SortMode>('default')
@@ -13,8 +14,19 @@ class FilterState {
     this.type = t
   }
 
-  setCategory(c: CategoryFilter) {
-    this.category = c
+  toggleCategory(c: CategoryFilter) {
+    if (c === '全部') {
+      this.categories = new Set()
+      return
+    }
+    const next = new Set(this.categories)
+    if (next.has(c)) next.delete(c)
+    else next.add(c)
+    this.categories = next
+  }
+
+  isCategorySelected(c: CategoryFilter): boolean {
+    return c === '全部' ? this.categories.size === 0 : this.categories.has(c)
   }
 
   toggleCategoryMenu() {
@@ -46,9 +58,9 @@ class DetailState {
 
 export const detailState = new DetailState()
 
-export function matchesFilter(item: CpiItem, type: PriceType | 'all', category: CategoryFilter): boolean {
+export function matchesFilter(item: CpiItem, type: PriceType | 'all', categories: Set<CategoryFilter>): boolean {
   if (type !== 'all' && item.type !== type) return false
-  if (category !== '全部' && item.category !== category) return false
+  if (categories.size > 0 && !categories.has(item.category as CategoryFilter)) return false
   return true
 }
 

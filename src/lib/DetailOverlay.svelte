@@ -8,7 +8,7 @@
 
   let { items }: { items: CpiItem[] } = $props()
 
-  const filtered = $derived(items.filter((it) => matchesFilter(it, filterState.type, filterState.category)))
+  const filtered = $derived(items.filter((it) => matchesFilter(it, filterState.type, filterState.categories)))
   const activeItem = $derived(items.find((it) => it.id === detailState.activeId) ?? null)
   const activeIndex = $derived(filtered.findIndex((it) => it.id === detailState.activeId))
 

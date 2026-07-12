@@ -8,7 +8,7 @@
   const filtered = $derived(
     sortItems(
       items.filter(
-        (it) => matchesFilter(it, filterState.type, filterState.category) && matchesSearch(it, filterState.search),
+        (it) => matchesFilter(it, filterState.type, filterState.categories) && matchesSearch(it, filterState.search),
       ),
       filterState.sort,
     ),

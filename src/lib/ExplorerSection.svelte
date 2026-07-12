@@ -4,12 +4,14 @@
   import { filterState, type SortMode } from './stores.svelte'
   import { fullpage } from './fullpage.svelte'
   import CardGrid from './CardGrid.svelte'
-  import iconFood from '../assets/hero/item14.svg?url'
-  import iconClothing from '../assets/hero/item07.svg?url'
-  import iconHousing from '../assets/hero/item06.svg?url'
-  import iconTransport from '../assets/hero/item10.svg?url'
-  import iconEducation from '../assets/hero/item04.svg?url'
-  import iconMisc from '../assets/hero/item12.svg?url'
+  import iconAll from '../assets/category/all.svg?url'
+  import iconFood from '../assets/category/food.svg?url'
+  import iconClothing from '../assets/category/cloth.svg?url'
+  import iconHousing from '../assets/category/house.svg?url'
+  import iconTransport from '../assets/category/transport.svg?url'
+  import iconHealth from '../assets/category/hospt.svg?url'
+  import iconEducation from '../assets/category/learn.svg?url'
+  import iconMisc from '../assets/category/others.svg?url'
 
   const SORT_OPTIONS: { key: SortMode; label: string }[] = [
     { key: 'default', label: '預設排序' },
@@ -17,12 +19,13 @@
     { key: 'change_asc', label: '漲幅最低' },
   ]
 
-  // 醫藥保健類 has no matching hero illustration - drawn inline as a cross instead
-  const CATEGORY_ICON: Partial<Record<CategoryFilter, string>> = {
+  const CATEGORY_ICON: Record<CategoryFilter, string> = {
+    全部: iconAll,
     食物類: iconFood,
     衣著類: iconClothing,
     居住類: iconHousing,
     交通及通訊類: iconTransport,
+    醫藥保健類: iconHealth,
     教養娛樂類: iconEducation,
     雜項類: iconMisc,
   }
@@ -74,23 +77,12 @@
       {#each CATEGORY_ORDER as c (c)}
         <button
           class="cat-tile"
-          class:selected={filterState.category === c}
-          onclick={() => {
-            filterState.setCategory(c)
-            catOpen = false
-          }}
+          class:selected={filterState.isCategorySelected(c)}
+          aria-pressed={filterState.isCategorySelected(c)}
+          onclick={() => filterState.toggleCategory(c)}
         >
           <span class="tile-icon">
-            {#if c === '全部'}
-              <span class="tile-all">全</span>
-            {:else if c === '醫藥保健類'}
-              <svg viewBox="0 0 48 48" class="tile-svg" aria-hidden="true">
-                <rect x="19" y="6" width="10" height="36" rx="2" />
-                <rect x="6" y="19" width="36" height="10" rx="2" />
-              </svg>
-            {:else}
-              <img src={CATEGORY_ICON[c]} alt="" class="tile-svg" />
-            {/if}
+            <img src={CATEGORY_ICON[c]} alt="" class="tile-svg" />
           </span>
           <span class="tile-label">{c}</span>
         </button>
@@ -203,23 +195,9 @@
   }
 
   .tile-svg {
-    width: 68%;
-    height: 68%;
+    width: 72%;
+    height: 72%;
     object-fit: contain;
-  }
-
-  svg.tile-svg rect {
-    fill: var(--ink);
-  }
-
-  .tile-all {
-    font-family: var(--font-display);
-    font-size: 1.4rem;
-    color: var(--ink);
-  }
-
-  .cat-tile.selected .tile-all {
-    color: #fff;
   }
 
   .tile-label {
