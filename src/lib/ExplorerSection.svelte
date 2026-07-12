@@ -160,7 +160,8 @@
     flex: 0 0 auto;
     display: flex;
     flex-wrap: wrap;
-    gap: 1.1rem;
+    justify-content: center;
+    gap: 0.4rem;
     padding: 1rem;
     border-bottom: 1px solid var(--line);
     background: var(--bg);
@@ -230,7 +231,6 @@
     letter-spacing: 0.03em;
     color: var(--type-color, var(--ink));
     white-space: nowrap;
-    border-radius: 999px;
     transition: background 0.15s ease, color 0.15s ease;
   }
 
