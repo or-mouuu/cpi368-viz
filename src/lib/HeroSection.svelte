@@ -37,7 +37,7 @@
         src={url(it.n)}
         alt=""
         class="icon"
-        style="top:{it.top}; left:{it.left}; width:min({it.size}px, {(it.size / 14.4).toFixed(1)}vw); --rot:{it.rot}deg; animation-delay:{it.delay}s"
+        style="top:{it.top}; left:{it.left}; width:clamp({it.size * 0.65}px, {(it.size / 14.4).toFixed(1)}vw, {it.size}px); --rot:{it.rot}deg; animation-delay:{it.delay}s"
       />
     {/each}
   </div>
@@ -55,9 +55,6 @@
       價格水準變動情形的構成<br />
       往下繼續看看這些項目的漲相吧！
     </p>
-    {#if meta}
-      <p class="meta">資料範圍：{meta.dataStart} ~ {meta.dataEnd}（{meta.basePeriod}）</p>
-    {/if}
     <button class="arrow" aria-label="往下捲動" onclick={() => fullpage.next()}>↓</button>
   </div>
 </div>
