@@ -1,7 +1,7 @@
 <script lang="ts">
   import { fullpage, SECTION_COUNT } from './fullpage.svelte'
 
-  const labels = ['首頁', '關於漲相', '三種方向', '上漲的漲相', '探索全部品項', '方法說明']
+  const labels = ['猜總漲幅', '測驗一', '測驗二', '探索全部品項', '方法說明']
 </script>
 
 <nav class="dots" aria-label="頁面導航">

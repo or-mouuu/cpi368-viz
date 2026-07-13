@@ -1,10 +1,8 @@
 <script lang="ts">
   import type { CpiData } from './types'
   import { fullpage } from './fullpage.svelte'
-  import HeroSection from './HeroSection.svelte'
-  import IntroSection from './IntroSection.svelte'
-  import DirectionsSection from './DirectionsSection.svelte'
-  import ShapesSection from './ShapesSection.svelte'
+  import GuessTotalSection from './intro/GuessTotalSection.svelte'
+  import GuessItemSection from './intro/GuessItemSection.svelte'
   import ExplorerSection from './ExplorerSection.svelte'
   import AboutSection from './AboutSection.svelte'
   import NavDots from './NavDots.svelte'
@@ -37,11 +35,19 @@
 
 <div class="viewport">
   <div class="track" style="transform: translateY(-{fullpage.active * 100}%)">
-    <section class="screen"><HeroSection meta={data.meta} /></section>
-    <section class="screen"><IntroSection meta={data.meta} /></section>
-    <section class="screen"><DirectionsSection index={2} items={data.items} meta={data.meta} /></section>
-    <section class="screen"><ShapesSection index={3} items={data.items} meta={data.meta} /></section>
-    <section class="screen"><ExplorerSection items={data.items} index={4} /></section>
+    <section class="screen"><GuessTotalSection meta={data.meta} /></section>
+    <section class="screen">
+      <GuessItemSection items={data.items} trioNames={['豬肉', '雞蛋', '鮭魚']} quizIndex={1} isLast={false} />
+    </section>
+    <section class="screen">
+      <GuessItemSection
+        items={data.items}
+        trioNames={['行動電話', '隱形眼鏡', '衛生紙、面紙及紙巾']}
+        quizIndex={2}
+        isLast={true}
+      />
+    </section>
+    <section class="screen"><ExplorerSection items={data.items} index={3} /></section>
     <section class="screen"><AboutSection meta={data.meta} /></section>
   </div>
 </div>

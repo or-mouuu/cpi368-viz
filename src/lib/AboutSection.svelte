@@ -8,7 +8,7 @@
 
   let scroller = $state<HTMLElement | null>(null)
   $effect(() => {
-    if (fullpage.active === 5) {
+    if (fullpage.active === 4) {
       fullpage.scrollerEl = scroller
     }
   })

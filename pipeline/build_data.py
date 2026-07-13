@@ -308,9 +308,35 @@ def compute_similarity(items: list[dict]) -> None:
         item1["similar"] = similarities[:5]
 
 
-def sanity_check(items: list[dict]) -> None:
+TOTAL_INDEX_KEY = "總指數(指數基期：民國110年=100)"
+
+
+def build_total(series: dict[str, dict[tuple[int, int], float]]) -> dict:
+    """Aggregate headline CPI (總指數), windowed to BASE_YEAR onward so its
+    change is measured on the same 口徑 as every item's change10y (trailing
+    12-month average: last-12-avg / first-12-avg - 1). The raw series reaches
+    back to 1981, hence the explicit BASE_YEAR filter."""
+    points = series.get(TOTAL_INDEX_KEY)
+    if not points:
+        raise RuntimeError(f"總指數 row not found in source ({TOTAL_INDEX_KEY!r})")
+    window_periods = [p for p in sorted(points.keys()) if p[0] >= BASE_YEAR]
+    values = [points[p] for p in window_periods]
+    metrics = shape_metrics(values)
+    return {
+        "totalChange": round(metrics["total_change"], 2),
+        "totalSeries": [round(v, 2) for v in values],
+        "totalPeriods": [f"{y}-{m:02d}" for y, m in window_periods],
+    }
+
+
+def sanity_check(items: list[dict], total: dict) -> None:
     if not (300 <= len(items) <= 400):
         raise RuntimeError(f"item count out of expected range: {len(items)}")
+    tc = total.get("totalChange")
+    if tc is None or not (5.0 <= tc <= 40.0):
+        raise RuntimeError(f"totalChange out of expected range: {tc}")
+    if len(total.get("totalSeries", [])) != len(total.get("totalPeriods", [])):
+        raise RuntimeError("totalSeries / totalPeriods length mismatch")
     types_present = {it["type"] for it in items}
     missing = {"steady", "plateau", "surge", "wavy", "flat", "cheaper"} - types_present
     if missing:
@@ -330,7 +356,8 @@ def main() -> None:
     series = load_series()
     items = build_items(series)
     compute_similarity(items)
-    sanity_check(items)
+    total = build_total(series)
+    sanity_check(items, total)
 
     all_periods = sorted({p for it in items for p in it["periods"]})
     meta = {
@@ -340,6 +367,7 @@ def main() -> None:
         "baseYear": BASE_YEAR,
         "basePeriod": "民國110年=100 (2021=100)",
         "source": "行政院主計總處 - 消費者物價基本分類暨項目群指數 (data.gov.tw dataset 9158)",
+        **total,
     }
 
     OUT_JSON.parent.mkdir(parents=True, exist_ok=True)

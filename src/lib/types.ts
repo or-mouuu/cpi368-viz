@@ -21,6 +21,11 @@ export interface CpiMeta {
   baseYear: number
   basePeriod: string
   source: string
+  /** headline CPI (總指數) change over the window, same 口徑 as item.change10y */
+  totalChange: number
+  /** full monthly 總指數 series + its periods, windowed to baseYear onward */
+  totalSeries: number[]
+  totalPeriods: string[]
 }
 
 export interface CpiData {

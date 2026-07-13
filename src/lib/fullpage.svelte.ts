@@ -3,8 +3,8 @@
 // opt into internal free scrolling (the explorer grid); section changes then
 // only happen when its inner scroller hits an edge.
 
-export const SECTION_COUNT = 6
-export const EXPLORER_INDEX = 4 // the free-scrolling grid section
+export const SECTION_COUNT = 5
+export const EXPLORER_INDEX = 3 // the free-scrolling grid section
 
 const TRANSITION_MS = 600
 const WHEEL_THRESHOLD = 60 // accumulated deltaY before a move triggers
