@@ -143,6 +143,8 @@
     font-family: var(--font-display);
     color: var(--ink);
     transition: color 0.4s ease;
+    transform: translate(-50%, -50%);
+    white-space: nowrap;
   }
 
   .price.bump {
@@ -150,21 +152,21 @@
   }
 
   .price.house {
-    left: 12%;
-    top: 40%;
-    font-size: clamp(1.6rem, 3vw, 2.6rem);
+    left: 24%;
+    top: 49%;
+    font-size: clamp(1.4rem, 2.6vw, 2.2rem);
   }
 
   .price.apple {
-    left: 47.5%;
+    left: 53%;
     top: 58%;
-    font-size: clamp(0.9rem, 1.6vw, 1.4rem);
+    font-size: clamp(0.75rem, 1.3vw, 1.1rem);
   }
 
   .price.shirt {
-    left: 71%;
-    top: 51%;
-    font-size: clamp(1.2rem, 2.2vw, 1.9rem);
+    left: 77%;
+    top: 45%;
+    font-size: clamp(1.05rem, 1.9vw, 1.6rem);
     color: var(--ink);
   }
 
@@ -173,16 +175,18 @@
     font-family: var(--font-display);
     color: var(--steady);
     font-size: clamp(0.85rem, 1.5vw, 1.25rem);
+    transform: translate(-50%, -50%);
+    white-space: nowrap;
   }
 
   .pct.roof {
-    left: 21%;
-    top: -9%;
+    left: 24%;
+    top: 3%;
   }
 
   .pct.stem {
-    left: 44%;
-    top: 30%;
+    left: 53%;
+    top: 38%;
   }
 
   .total-row {

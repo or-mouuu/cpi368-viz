@@ -29,14 +29,16 @@
   h1 {
     font-family: var(--font-display);
     font-weight: 400;
-    line-height: 1.35;
-    letter-spacing: 0.06em;
+    line-height: 1.4;
+    /* the mockup tracks the display face out very wide */
+    letter-spacing: 0.22em;
+    text-indent: 0.22em; /* re-center: letter-spacing adds a trailing gap */
     display: flex;
     flex-direction: column;
   }
 
   .line {
-    font-size: clamp(2rem, 5.4vw, 4rem);
+    font-size: clamp(2.1rem, 5vw, 4.5rem);
     white-space: nowrap;
   }
 
@@ -45,9 +47,10 @@
   }
 
   p {
-    margin-top: 1.8rem;
-    font-size: 0.95rem;
-    line-height: 2;
+    margin-top: 2.2rem;
+    font-size: clamp(1rem, 1.4vw, 1.25rem);
+    line-height: 2.1;
+    letter-spacing: 0.05em;
     font-weight: 700;
     color: var(--ink);
   }

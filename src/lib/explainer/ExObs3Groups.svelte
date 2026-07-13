@@ -16,7 +16,7 @@
       key: 'high',
       label: '高購買頻率',
       sub: '每月至少購買1次',
-      pos: 'top: 4%; left: 42%;',
+      pos: 'top: 0%; left: 46%;',
       labelSide: 'right',
       icons: [
         { src: imgBread, style: 'top:8%; left:14%; width:52%; transform:rotate(-8deg)' },
@@ -29,7 +29,7 @@
       key: 'low',
       label: '低購買頻率',
       sub: '每季購買不到1次',
-      pos: 'top: 26%; left: 2%;',
+      pos: 'top: 32%; left: -6%;',
       labelSide: 'left',
       icons: [
         { src: imgPill, style: 'top:8%; left:16%; width:38%; transform:rotate(-14deg)' },
@@ -42,7 +42,7 @@
       key: 'mid',
       label: '中購買頻率',
       sub: '每季至少購買1次',
-      pos: 'top: 52%; left: 46%;',
+      pos: 'top: 64%; left: 42%;',
       labelSide: 'right',
       icons: [
         { src: imgSoap, style: 'top:14%; left:56%; width:32%' },
