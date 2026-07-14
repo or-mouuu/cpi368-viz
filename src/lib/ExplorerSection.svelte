@@ -36,8 +36,13 @@
   let catOpen = $state(false)
   let hasActivated = $state(false)
 
+  // Claim the shared scroller ref whenever THIS section is the active one.
+  // Gating on active (not an unconditional assignment) is essential: About
+  // (the last section) also owns fullpage.scrollerEl, so returning here from
+  // About must re-point it at the explorer's scroller or the wheel handler
+  // reads About's scroll state and the list appears frozen.
   $effect(() => {
-    fullpage.scrollerEl = scroller
+    if (fullpage.active === index) fullpage.scrollerEl = scroller
   })
 
   $effect(() => {

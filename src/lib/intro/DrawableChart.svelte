@@ -13,13 +13,23 @@
 
   const width = 900
   const height = 420
-  const margin = { top: 24, right: 20, bottom: 36, left: 20 }
+  const margin = { top: 24, right: 20, bottom: 36, left: 52 }
   const plotX0 = margin.left
   const plotX1 = width - margin.right
   const plotY0 = margin.top
   const plotY1 = height - margin.bottom
 
   const rebased = $derived(rebase(item.series))
+
+  // Fixed y-axis: −50% (=50) at the bottom, +100% (=200) at the top, with the
+  // 0% baseline (=100) always at the same place regardless of the item — so no
+  // item's chart hints at its answer by where the flat line sits.
+  const yTicks = [
+    { v: 200, label: '+100%' },
+    { v: 150, label: '+50%' },
+    { v: 100, label: '0' },
+    { v: 50, label: '−50%' },
+  ]
 
   const yearTicks = $derived.by(() => {
     const seen = new Set<string>()
@@ -36,14 +46,10 @@
 
   const x = $derived(scalePoint().domain(item.periods).range([plotX0, plotX1]))
 
-  const y = $derived.by(() => {
-    const min = Math.min(...rebased, 100)
-    const max = Math.max(...rebased, 100)
-    const span = max - min || 10
-    return scaleLinear()
-      .domain([min - span * 0.6, max + span * 0.6])
-      .range([plotY1, plotY0])
-  })
+  // Domain is padded a little beyond the labelled −50%…+100% ticks so real
+  // lines that dip below −50% (e.g. 行動電話 ≈ −59%) aren't clipped; the pad is
+  // fixed for every item, so 0% (=100) stays at the same pixel across items.
+  const y = scaleLinear().domain([35, 210]).range([plotY1, plotY0])
 
   const realPath = $derived.by(() => {
     const gen = line<number>()
@@ -87,9 +93,44 @@
     fullpage.navLocked = false
   }
 
+  // The user draws freehand, but the committed guess is resampled to one point
+  // per year (plus the final month) — the line the user sees is these anchors
+  // joined, so it stays clean and doesn't wobble with hand jitter.
+  const sampleIndices = $derived.by(() => {
+    const idx = yearTicks.map((t) => t.index)
+    const last = item.periods.length - 1
+    if (!idx.includes(last)) idx.push(last)
+    return idx
+  })
+
+  const sampledGuess = $derived.by(() => {
+    if (points.length < 2) return [] as { x: number; y: number }[]
+    const maxX = Math.max(...points.map((p) => p.x))
+    const out: { x: number; y: number }[] = []
+    for (const i of sampleIndices) {
+      const xp = x(item.periods[i]) ?? 0
+      if (xp > maxX + 2) continue // year not drawn yet
+      let best = points[0]
+      let bestD = Infinity
+      for (const p of points) {
+        const d = Math.abs(p.x - xp)
+        if (d < bestD) {
+          bestD = d
+          best = p
+        }
+      }
+      out.push({ x: xp, y: best.y })
+    }
+    return out
+  })
+
   const guessPath = $derived.by(() => {
-    if (points.length < 2) return ''
-    return points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ')
+    if (sampledGuess.length < 2) return ''
+    const gen = line<{ x: number; y: number }>()
+      .x((p) => p.x)
+      .y((p) => p.y)
+      .curve(curveMonotoneX)
+    return gen(sampledGuess) ?? ''
   })
 
   const coverage = $derived.by(() => {
@@ -113,10 +154,8 @@
   })
 
   const guessedEndValue = $derived.by(() => {
-    if (points.length === 0) return null
-    let best = points[0]
-    for (const p of points) if (p.x > best.x) best = p
-    return y.invert(best.y)
+    if (sampledGuess.length === 0) return null
+    return y.invert(sampledGuess[sampledGuess.length - 1].y)
   })
 
   const guessedEndPct = $derived(guessedEndValue === null ? null : guessedEndValue - 100)
@@ -148,7 +187,10 @@
     preserveAspectRatio="xMidYMid meet"
     role="img"
   >
-    <line x1={plotX0} x2={plotX1} y1={y(100)} y2={y(100)} class="gridline baseline" />
+    {#each yTicks as t (t.v)}
+      <line x1={plotX0} x2={plotX1} y1={y(t.v)} y2={y(t.v)} class="gridline" class:baseline={t.v === 100} />
+      <text x={plotX0 - 8} y={y(t.v)} class="ytick" text-anchor="end" dominant-baseline="middle">{t.label}</text>
+    {/each}
     <line x1={plotX0} x2={plotX1} y1={plotY1} y2={plotY1} class="axis" />
 
     {#each yearTicks as t (t.index)}
@@ -209,6 +251,12 @@
     display: block;
   }
 
+  .gridline {
+    stroke: var(--line);
+    stroke-width: 1;
+    opacity: 0.35;
+  }
+
   .gridline.baseline {
     stroke: var(--ink);
     stroke-width: 1.25;
@@ -222,7 +270,8 @@
     opacity: 0.6;
   }
 
-  .xtick {
+  .xtick,
+  .ytick {
     font-size: 15px;
     fill: var(--ink);
     font-family: var(--font-numeric);

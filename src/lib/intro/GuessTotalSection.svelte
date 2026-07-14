@@ -6,10 +6,10 @@
 
   let { meta }: { meta: CpiMeta } = $props()
 
-  const MAX = 60
+  const MAX = 100
 
   let phase = $state<'guess' | 'reveal'>('guess')
-  let guess = $state(20)
+  let guess = $state(5)
   let showNext = $state(false)
 
   const real = tweened(0, { duration: 1400, easing: cubicOut })
