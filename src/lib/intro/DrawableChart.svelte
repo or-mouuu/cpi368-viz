@@ -23,17 +23,17 @@
 
   // Fixed y-axis: the 0% baseline (=100) is always at the same pixel across
   // items so no chart hints at its answer by where the flat line sits. Ticks
-  // span −75%…+150%; the domain is padded beyond them so lines never clip.
+  // span −100%…+150%; the domain is padded beyond them so lines never clip.
   const yTicks = [
     { v: 250, label: '+150%' },
     { v: 200, label: '+100%' },
     { v: 150, label: '+50%' },
     { v: 100, label: '0' },
     { v: 50, label: '−50%' },
-    { v: 25, label: '−75%' },
+    { v: 0, label: '−100%' },
   ]
 
-  const y = scaleLinear().domain([15, 262]).range([plotY1, plotY0])
+  const y = scaleLinear().domain([-12, 262]).range([plotY1, plotY0])
 
   const yearTicks = $derived.by(() => {
     const seen = new Set<string>()
@@ -112,16 +112,25 @@
     }
   }
 
+  // half the spacing between quarter vertices — the cursor "captures" the
+  // nearest column within this tolerance, so a sweep that gets close to the
+  // final vertex (which sits on the right edge) still fills it.
+  const quarterTol = $derived((plotX1 - plotX0) / Math.max(1, quarterIndices.length - 1) / 2)
+
   // forward-fill: every quarter the cursor sweeps past (rightward only) takes
   // the cursor's height; moving back left never overwrites — "no backtracking".
   function applySweep(p: { x: number; y: number }) {
     cursor = p
     let changed = false
     const next = guessY.slice()
+    // once the cursor is within ~one quarter of the right edge, treat it as
+    // reaching the end and fill any remaining trailing quarters — so finishing
+    // never requires hitting the last pixel exactly.
+    const nearEnd = p.x >= plotX1 - 2 * quarterTol
     quarterIndices.forEach((qi, k) => {
-      if (k === 0) return // locked to the anchor end
+      if (k === 0 || next[k] != null) return // k=0 locked to the anchor end
       const qx = x(item.periods[qi]) ?? 0
-      if (qx > sweptX && qx <= p.x + 0.5) {
+      if (qx > sweptX && (nearEnd || qx <= p.x + quarterTol)) {
         next[k] = p.y
         changed = true
       }
@@ -185,12 +194,30 @@
   })
   const guessedEndPct = $derived(guessedEndValue === null ? null : guessedEndValue - 100)
 
+  // Cognition gap = mean absolute distance between the drawn line and the real
+  // line, measured at every drawn quarter (in index points ≈ percentage
+  // points), à la Flourish's "off by X, on average".
+  const meanAbsError = $derived.by(() => {
+    let sum = 0
+    let n = 0
+    quarterIndices.forEach((qi, k) => {
+      if (k === 0) return // anchor is real, not a guess
+      const gy = guessY[k]
+      if (gy == null) return
+      sum += Math.abs(y.invert(gy) - rebased[qi])
+      n++
+    })
+    return n ? sum / n : null
+  })
+
   function surpriseText(): string {
-    if (guessedEndPct === null) return ''
-    const diff = Math.abs(guessedEndPct - item.change10y)
-    if (diff < 5) return '你猜得很準！'
-    if (guessedEndPct > item.change10y) return `其實沒你想的誇張，實際只漲了 ${item.change10y}%`
-    return `比你想的還兇，實際漲了 ${item.change10y}%`
+    if (meanAbsError === null) return ''
+    const e = meanAbsError
+    const n = e.toFixed(1)
+    if (e < 5) return `神準！平均只差 ${n} 個百分點`
+    if (e < 12) return `👍 很不錯！平均差了 ${n} 個百分點`
+    if (e < 25) return `還行，平均差了 ${n} 個百分點`
+    return `落差不小，平均差了 ${n} 個百分點`
   }
 
   // --- draw-on animation for the real line once revealed ---
