@@ -21,15 +21,19 @@
 
   const rebased = $derived(rebase(item.series))
 
-  // Fixed y-axis: −50% (=50) at the bottom, +100% (=200) at the top, with the
-  // 0% baseline (=100) always at the same place regardless of the item — so no
-  // item's chart hints at its answer by where the flat line sits.
+  // Fixed y-axis: the 0% baseline (=100) is always at the same pixel across
+  // items so no chart hints at its answer by where the flat line sits. Ticks
+  // span −75%…+150%; the domain is padded beyond them so lines never clip.
   const yTicks = [
+    { v: 250, label: '+150%' },
     { v: 200, label: '+100%' },
     { v: 150, label: '+50%' },
     { v: 100, label: '0' },
     { v: 50, label: '−50%' },
+    { v: 25, label: '−75%' },
   ]
+
+  const y = scaleLinear().domain([15, 262]).range([plotY1, plotY0])
 
   const yearTicks = $derived.by(() => {
     const seen = new Set<string>()
@@ -46,24 +50,57 @@
 
   const x = $derived(scalePoint().domain(item.periods).range([plotX0, plotX1]))
 
-  // Domain is padded a little beyond the labelled −50%…+100% ticks so real
-  // lines that dip below −50% (e.g. 行動電話 ≈ −59%) aren't clipped; the pad is
-  // fixed for every item, so 0% (=100) stays at the same pixel across items.
-  const y = scaleLinear().domain([35, 210]).range([plotY1, plotY0])
+  // --- anchor: the real line is shown for 2013 up to the draw-from point
+  // (first month of 2014); the user extends the rest, You-Draw-It style. ---
+  const drawFromIndex = $derived.by(() => {
+    const i = item.periods.findIndex((p) => p.split('-')[0] === '2014')
+    return i >= 0 ? i : Math.min(12, item.periods.length - 1)
+  })
+  const drawFromX = $derived(x(item.periods[drawFromIndex]) ?? plotX0)
+  const drawFromY = $derived(y(rebased[drawFromIndex]))
 
-  const realPath = $derived.by(() => {
-    const gen = line<number>()
+  const lineGen = (data: number[]) =>
+    line<number>()
       .x((_, i) => x(item.periods[i]) ?? 0)
       .y((v) => y(v))
-      .curve(curveMonotoneX)
-    return gen(rebased) ?? ''
+      .curve(curveMonotoneX)(data) ?? ''
+
+  const anchorPath = $derived(lineGen(rebased.slice(0, drawFromIndex + 1)))
+  const realPath = $derived(lineGen(rebased))
+
+  // one guess vertex per quarter (months 1/4/7/10) across the draw region,
+  // plus the final month — the drawn line is these anchors joined, so it stays
+  // clean instead of wobbling with hand jitter.
+  const quarterIndices = $derived.by(() => {
+    const out: number[] = []
+    for (let i = drawFromIndex; i < item.periods.length; i++) {
+      const m = Number(item.periods[i].split('-')[1])
+      if (m === 1 || m === 4 || m === 7 || m === 10) out.push(i)
+    }
+    const last = item.periods.length - 1
+    if (out.length === 0 || out[out.length - 1] !== last) out.push(last)
+    if (out[0] !== drawFromIndex) out.unshift(drawFromIndex)
+    return out
   })
 
-  // --- hand-drawn guess capture ---
+  // --- sweep capture ---
   let svgEl = $state<SVGSVGElement | null>(null)
-  let points = $state<{ x: number; y: number }[]>([])
+  let guessY = $state<(number | null)[]>([])
+  let sweptX = $state(0)
   let drawing = $state(false)
+  let cursor = $state<{ x: number; y: number } | null>(null)
   let announcedDrawn = false
+
+  // reset whenever the item (hence the quarter layout / anchor) changes
+  $effect(() => {
+    item.id
+    const init: (number | null)[] = Array(quarterIndices.length).fill(null)
+    if (init.length) init[0] = drawFromY
+    guessY = init
+    sweptX = drawFromX
+    cursor = null
+    announcedDrawn = false
+  })
 
   function toPlot(e: PointerEvent): { x: number; y: number } {
     const rect = svgEl!.getBoundingClientRect()
@@ -75,89 +112,77 @@
     }
   }
 
+  // forward-fill: every quarter the cursor sweeps past (rightward only) takes
+  // the cursor's height; moving back left never overwrites — "no backtracking".
+  function applySweep(p: { x: number; y: number }) {
+    cursor = p
+    let changed = false
+    const next = guessY.slice()
+    quarterIndices.forEach((qi, k) => {
+      if (k === 0) return // locked to the anchor end
+      const qx = x(item.periods[qi]) ?? 0
+      if (qx > sweptX && qx <= p.x + 0.5) {
+        next[k] = p.y
+        changed = true
+      }
+    })
+    if (p.x > sweptX) sweptX = p.x
+    if (changed) guessY = next
+  }
+
   function onPointerDown(e: PointerEvent) {
     if (revealed) return
     drawing = true
-    points = [toPlot(e)]
     fullpage.navLocked = true
     ;(e.currentTarget as Element).setPointerCapture(e.pointerId)
+    applySweep(toPlot(e))
   }
-
   function onPointerMove(e: PointerEvent) {
     if (!drawing || revealed) return
-    points.push(toPlot(e))
+    applySweep(toPlot(e))
   }
-
   function endDraw() {
     drawing = false
     fullpage.navLocked = false
   }
 
-  // The user draws freehand, but the committed guess is resampled to one point
-  // per year (plus the final month) — the line the user sees is these anchors
-  // joined, so it stays clean and doesn't wobble with hand jitter.
-  const sampleIndices = $derived.by(() => {
-    const idx = yearTicks.map((t) => t.index)
-    const last = item.periods.length - 1
-    if (!idx.includes(last)) idx.push(last)
-    return idx
-  })
-
-  const sampledGuess = $derived.by(() => {
-    if (points.length < 2) return [] as { x: number; y: number }[]
-    const maxX = Math.max(...points.map((p) => p.x))
-    const out: { x: number; y: number }[] = []
-    for (const i of sampleIndices) {
-      const xp = x(item.periods[i]) ?? 0
-      if (xp > maxX + 2) continue // year not drawn yet
-      let best = points[0]
-      let bestD = Infinity
-      for (const p of points) {
-        const d = Math.abs(p.x - xp)
-        if (d < bestD) {
-          bestD = d
-          best = p
-        }
-      }
-      out.push({ x: xp, y: best.y })
-    }
-    return out
+  const guessPoints = $derived.by(() => {
+    const pts: { x: number; y: number }[] = []
+    quarterIndices.forEach((qi, k) => {
+      const gy = guessY[k]
+      if (gy != null) pts.push({ x: x(item.periods[qi]) ?? 0, y: gy })
+    })
+    return pts
   })
 
   const guessPath = $derived.by(() => {
-    if (sampledGuess.length < 2) return ''
-    const gen = line<{ x: number; y: number }>()
-      .x((p) => p.x)
-      .y((p) => p.y)
-      .curve(curveMonotoneX)
-    return gen(sampledGuess) ?? ''
+    if (guessPoints.length < 2) return ''
+    return (
+      line<{ x: number; y: number }>()
+        .x((p) => p.x)
+        .y((p) => p.y)
+        .curve(curveMonotoneX)(guessPoints) ?? ''
+    )
   })
 
-  const coverage = $derived.by(() => {
-    if (points.length === 0) return 0
-    let minX = Infinity
-    let maxX = -Infinity
-    for (const p of points) {
-      if (p.x < minX) minX = p.x
-      if (p.x > maxX) maxX = p.x
-    }
-    return (maxX - minX) / (plotX1 - plotX0)
+  const leadDot = $derived.by(() => {
+    if (drawing && cursor) return { x: Math.min(cursor.x, plotX1), y: cursor.y }
+    return guessPoints[guessPoints.length - 1] ?? { x: drawFromX, y: drawFromY }
   })
 
-  const enoughCoverage = $derived(coverage >= 0.9)
+  const reachedEnd = $derived(guessY.length > 0 && guessY.every((v) => v != null))
 
   $effect(() => {
-    if (enoughCoverage && !announcedDrawn) {
+    if (reachedEnd && !announcedDrawn) {
       announcedDrawn = true
       onDrawn()
     }
   })
 
   const guessedEndValue = $derived.by(() => {
-    if (sampledGuess.length === 0) return null
-    return y.invert(sampledGuess[sampledGuess.length - 1].y)
+    const last = guessPoints[guessPoints.length - 1]
+    return last ? y.invert(last.y) : null
   })
-
   const guessedEndPct = $derived(guessedEndValue === null ? null : guessedEndValue - 100)
 
   function surpriseText(): string {
@@ -171,11 +196,8 @@
   // --- draw-on animation for the real line once revealed ---
   let realPathEl = $state<SVGPathElement | null>(null)
   let realPathLength = $state(0)
-
   $effect(() => {
-    if (revealed && realPathEl) {
-      realPathLength = realPathEl.getTotalLength()
-    }
+    if (revealed && realPathEl) realPathLength = realPathEl.getTotalLength()
   })
 </script>
 
@@ -199,8 +221,16 @@
       </text>
     {/each}
 
+    <!-- real anchor line (2013 → draw-from) -->
+    <path d={anchorPath} fill="none" class="anchor-line" />
+    <circle cx={drawFromX} cy={drawFromY} r="5" class="origin-dot" />
+
     {#if guessPath}
       <path d={guessPath} fill="none" class="guess-line" />
+    {/if}
+
+    {#if !revealed && guessPoints.length}
+      <circle cx={leadDot.x} cy={leadDot.y} r="5" class="lead-dot" />
     {/if}
 
     {#if revealed}
@@ -222,7 +252,7 @@
         height={plotY1 - plotY0}
         class="capture"
         role="slider"
-        aria-label="手繪你猜測的走勢"
+        aria-label="從 2014 往右畫出你猜的走勢"
         aria-valuenow={guessedEndPct ?? 0}
         tabindex="0"
         onpointerdown={onPointerDown}
@@ -236,7 +266,7 @@
   {#if revealed}
     <p class="surprise">{surpriseText()}</p>
   {:else}
-    <p class="hint">用手指或滑鼠，從左到右畫出你猜的走勢</p>
+    <p class="hint">從 2014 往右畫出你猜的走勢</p>
   {/if}
 </div>
 
@@ -278,6 +308,17 @@
     opacity: 0.6;
   }
 
+  .anchor-line {
+    stroke: var(--steady);
+    stroke-width: 4.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .origin-dot {
+    fill: var(--steady);
+  }
+
   .guess-line {
     stroke: var(--ink);
     stroke-width: 3;
@@ -285,6 +326,11 @@
     stroke-linejoin: round;
     stroke-dasharray: 6 6;
     opacity: 0.75;
+  }
+
+  .lead-dot {
+    fill: var(--ink);
+    opacity: 0.85;
   }
 
   .real-line {
