@@ -6,6 +6,8 @@
   import { yearSpan } from './chartMath'
   import DetailChart from './DetailChart.svelte'
   import Sparkline from './Sparkline.svelte'
+  import ItemNote from './ItemNote.svelte'
+  import { itemNotes } from './itemNotes'
 
   let { items }: { items: CpiItem[] } = $props()
 
@@ -77,6 +79,10 @@
         {#if nextItem}<span class="nav-name">{shortName(nextItem.name)}</span>{/if}
       </button>
     </div>
+
+    {#if itemNotes[activeItem.id]}
+      <ItemNote note={itemNotes[activeItem.id]} />
+    {/if}
 
     {#if similarItems.length}
       <div class="similar">
