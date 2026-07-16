@@ -8,6 +8,7 @@
 
   let tab = $state<'line' | 'month'>('line')
   let hoverIndex = $state<number | null>(null)
+  let tipPos = $state<{ x: number; y: number } | null>(null)
   let svgEl = $state<SVGSVGElement | null>(null)
 
   const width = 1200
@@ -21,6 +22,7 @@
   $effect(() => {
     item.id
     hoverIndex = null
+    tipPos = null
   })
 
   const yearTicks = $derived.by(() => {
@@ -53,7 +55,10 @@
 
   const yTicks = $derived.by(() => {
     const [d0, d1] = y.domain()
-    return niceTicks(d0, d1)
+    // niceTicks rounds tick values, which can push the end ticks a hair past
+    // the domain; drop those so no gridline renders below the axis / above the
+    // top (the faint line under the x-axis on near-flat items).
+    return niceTicks(d0, d1).filter((t) => t >= d0 - 1e-6 && t <= d1 + 1e-6)
   })
 
   const path = $derived.by(() => {
@@ -93,7 +98,7 @@
 
   const yMonthTicks = $derived.by(() => {
     const [d0, d1] = yMonth.domain()
-    return niceTicks(d0, d1)
+    return niceTicks(d0, d1).filter((t) => t >= d0 - 1e-6 && t <= d1 + 1e-6)
   })
 
   function onPointerMove(e: PointerEvent) {
@@ -111,10 +116,29 @@
       }
     })
     hoverIndex = nearest
+    tipPos = tipPosFor(x(item.periods[nearest]) ?? 0, y(rebased[nearest]))
   }
 
   function onPointerLeave() {
     hoverIndex = null
+    tipPos = null
+  }
+
+  // Map a viewBox point to a pixel offset within .chart-shell, accounting for
+  // the letterboxing preserveAspectRatio="meet" adds when the rendered SVG box
+  // doesn't match the 1200×520 viewBox aspect. Positioning the HTML tooltip
+  // this way keeps it locked to the data point no matter how much vertical
+  // space the chart is given.
+  function tipPosFor(vx: number, vy: number): { x: number; y: number } | null {
+    if (!svgEl) return null
+    const shell = svgEl.closest('.chart-shell') as HTMLElement | null
+    if (!shell) return null
+    const sr = svgEl.getBoundingClientRect()
+    const shr = shell.getBoundingClientRect()
+    const scale = Math.min(sr.width / width, sr.height / height)
+    const offX = (sr.width - width * scale) / 2
+    const offY = (sr.height - height * scale) / 2
+    return { x: sr.left + offX + vx * scale - shr.left, y: sr.top + offY + vy * scale - shr.top }
   }
 
   const hoverInfo = $derived.by(() => {
@@ -170,10 +194,10 @@
       {/if}
     </svg>
 
-    {#if hoverInfo}
+    {#if hoverInfo && tipPos}
       <div
         class="tooltip"
-        style="left:{(hoverInfo.px / width) * 100}%; top:{(hoverInfo.py / height) * 100}%"
+        style="left:{tipPos.x}px; top:{tipPos.y}px"
       >
         <div class="tt-period">{hoverInfo.period}</div>
         <div class="tt-value">指數 {hoverInfo.value.toFixed(1)}</div>

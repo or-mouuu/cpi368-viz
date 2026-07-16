@@ -11,6 +11,10 @@
 
   let { items }: { items: CpiItem[] } = $props()
 
+  // Temporarily hidden while the layout is reworked — keep the similar-items
+  // data + markup below intact so it can be switched back on later.
+  const SHOW_SIMILAR = false
+
   const byId = $derived(new Map(items.map((it) => [it.id, it])))
 
   const filtered = $derived(items.filter((it) => matchesFilter(it, filterState.type, filterState.categories)))
@@ -84,7 +88,7 @@
       <ItemNote note={itemNotes[activeItem.id]} />
     {/if}
 
-    {#if similarItems.length}
+    {#if SHOW_SIMILAR && similarItems.length}
       <div class="similar">
         <p class="similar-title">走勢最像的品項</p>
         <div class="similar-row">
