@@ -1,9 +1,10 @@
 <script lang="ts">
   import type { ItemNote } from './itemNotes'
   import { NOTE_DISCLAIMER } from './itemNotes'
+  import { viewport } from './viewport.svelte'
 
   let { note }: { note: ItemNote } = $props()
-  let expanded = $state(false)
+  let expanded = $state(viewport.mobile)
 </script>
 
 <div class="item-note">
@@ -40,16 +41,27 @@
   }
 
   .toggle {
-    margin-top: 0.5rem;
-    border: none;
-    background: none;
-    padding: 0.2rem 0.4rem;
+    margin-top: 0.6rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    border: 1px solid var(--line);
+    background: var(--bg-card, transparent);
+    padding: 0.5rem 1rem;
+    min-height: 40px;
     font-family: inherit;
-    font-size: 0.8rem;
+    font-size: 0.85rem;
     font-weight: 700;
     color: var(--ink);
-    opacity: 0.6;
+    border-radius: 999px;
     cursor: pointer;
+  }
+  @media (max-width: 700px) {
+    .toggle {
+      min-height: 44px;
+      font-size: 0.95rem;
+      padding: 0.6rem 1.2rem;
+    }
   }
 
   .chev {

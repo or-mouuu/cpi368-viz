@@ -201,8 +201,36 @@
   }
 
   @media (max-width: 700px) {
+    .overlay {
+      overflow-y: auto;
+    }
+    .chart-wrap {
+      display: block;
+      position: relative;
+      height: 58vh;
+      padding: 0.5rem 0;
+    }
+    .chart-area {
+      width: 100%;
+      height: 100%;
+    }
     .nav {
-      max-width: 64px;
+      position: absolute;
+      top: 44%;
+      transform: translateY(-50%);
+      z-index: 2;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: rgba(239, 236, 225, 0.85);
+      padding: 0;
+      max-width: none;
+    }
+    .nav.prev {
+      left: 0;
+    }
+    .nav.next {
+      right: 0;
     }
     .nav-name {
       display: none;

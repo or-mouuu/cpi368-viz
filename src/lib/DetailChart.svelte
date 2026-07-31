@@ -3,6 +3,7 @@
   import { scaleLinear, scalePoint, scaleBand } from 'd3-scale'
   import type { CpiItem } from './types'
   import { rebase, monthlyAverages, startYearLabel, yearSpan, niceTicks } from './chartMath'
+  import { viewport } from './viewport.svelte'
 
   let { item }: { item: CpiItem } = $props()
 
@@ -11,9 +12,11 @@
   let tipPos = $state<{ x: number; y: number } | null>(null)
   let svgEl = $state<SVGSVGElement | null>(null)
 
-  const width = 1200
-  const height = 520
-  const margin = { top: 24, right: 46, bottom: 40, left: 56 }
+  const width = $derived(viewport.mobile ? 560 : 1200)
+  const height = $derived(viewport.mobile ? 620 : 520)
+  const margin = $derived(
+    viewport.mobile ? { top: 18, right: 30, bottom: 44, left: 52 } : { top: 24, right: 46, bottom: 40, left: 56 },
+  )
 
   const rebased = $derived(rebase(item.series))
   const startYear = $derived(startYearLabel(item.periods))
@@ -37,6 +40,8 @@
     })
     return ticks
   })
+
+  const xLabels = $derived(viewport.mobile ? yearTicks.filter((_, i) => i % 2 === 0) : yearTicks)
 
   const x = $derived(
     scalePoint()
@@ -165,6 +170,7 @@
       bind:this={svgEl}
       viewBox="0 0 {width} {height}"
       class="chart"
+      class:mobile={viewport.mobile}
       preserveAspectRatio="xMidYMid meet"
       onpointermove={onPointerMove}
       onpointerleave={onPointerLeave}
@@ -180,7 +186,7 @@
 
       <line x1={margin.left} x2={width - margin.right} y1={height - margin.bottom} y2={height - margin.bottom} class="axis" />
 
-      {#each yearTicks as t (t.index)}
+      {#each xLabels as t (t.index)}
         <text x={x(item.periods[t.index])} y={height - margin.bottom + 24} class="xtick" text-anchor="middle">
           {t.label}
         </text>
@@ -209,7 +215,7 @@
 
     <p class="note">以起始年（{startYear}）平均 = 100 重新計算，方便跨品項比較；滑過折線可看該月較起始年的變動</p>
   {:else}
-    <svg viewBox="0 0 {width} {height}" class="chart" preserveAspectRatio="xMidYMid meet" role="img">
+    <svg viewBox="0 0 {width} {height}" class="chart" class:mobile={viewport.mobile} preserveAspectRatio="xMidYMid meet" role="img">
       {#each yMonthTicks as t, ti (ti)}
         <line x1={margin.left} x2={width - margin.right} y1={yMonth(t)} y2={yMonth(t)} class="gridline" />
         <text x={margin.left - 12} y={yMonth(t)} class="ytick" text-anchor="end" dominant-baseline="middle">{t}</text>
@@ -236,7 +242,7 @@
           class:min={m.isMin}
           fill="var(--type-color)"
         />
-        <text x={bx + bw / 2} y={height - margin.bottom + 24} class="xtick" text-anchor="middle">{m.month}月</text>
+        <text x={bx + bw / 2} y={height - margin.bottom + 24} class="xtick" text-anchor="middle">{m.month}{viewport.mobile ? '' : '月'}</text>
         {#if m.isMax || m.isMin}
           <text x={bx + bw / 2} y={by + (m.avg >= 100 ? -8 : 16)} class="bar-label" text-anchor="middle">
             {m.isMax ? '最高' : '最低'}
@@ -309,6 +315,14 @@
     font-size: 15px;
     fill: var(--ink);
     font-family: var(--font-numeric);
+  }
+
+  .chart.mobile .ytick,
+  .chart.mobile .xtick {
+    font-size: 24px;
+  }
+  .chart.mobile .bar-label {
+    font-size: 20px;
   }
   .line {
     stroke-linecap: round;
