@@ -219,12 +219,17 @@
       top: 44%;
       transform: translateY(-50%);
       z-index: 2;
-      width: 40px;
-      height: 40px;
+      width: 38px;
+      height: 38px;
       border-radius: 50%;
-      background: rgba(239, 236, 225, 0.85);
+      background: var(--bg-card, #fff);
+      border: 1px solid var(--line);
+      box-shadow: 0 1px 5px rgba(23, 20, 15, 0.15);
       padding: 0;
       max-width: none;
+    }
+    .nav .chev {
+      font-size: 1.5rem;
     }
     .nav.prev {
       left: 0;
